@@ -1,0 +1,13 @@
+{
+  "name": "cred-exchange",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CRED Exchange static homepage and agent reputation terminal.",
+  "scripts": {
+    "dev": "python3 -m http.server 4173",
+    "test": "node scripts/check-static.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

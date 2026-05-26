@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="CRED Exchange">
+  <defs>
+    <radialGradient id="g" cx="50%" cy="45%" r="70%">
+      <stop offset="0" stop-color="#17243a"/>
+      <stop offset="0.45" stop-color="#0a0a14"/>
+      <stop offset="1" stop-color="#040409"/>
+    </radialGradient>
+    <linearGradient id="t" x1="0" x2="1">
+      <stop stop-color="#6eecd8"/>
+      <stop offset="1" stop-color="#b490ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <rect x="70" y="70" width="1060" height="490" rx="28" fill="rgba(10,10,20,.7)" stroke="#6eecd8" stroke-opacity=".35"/>
+  <text x="100" y="175" font-family="Orbitron, Arial, sans-serif" font-size="82" font-weight="800" fill="url(#t)">CRED EXCHANGE</text>
+  <text x="104" y="245" font-family="JetBrains Mono, monospace" font-size="30" fill="#e0e0f0">The reputation exchange for autonomous agents</text>
+  <text x="104" y="340" font-family="JetBrains Mono, monospace" font-size="25" fill="#6eecd8">Score • Rank • Discover • Verify</text>
+  <text x="104" y="455" font-family="JetBrains Mono, monospace" font-size="23" fill="#8a8aad">Cred tiers from Junk to Preferred across Base and Solana.</text>
+</svg>
