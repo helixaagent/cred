@@ -156,6 +156,105 @@
   }
   .search-box button:hover { background: rgba(0,255,65,0.15); }
   
+  /* Cred report modal */
+  .report-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(4px);
+  }
+  .report-modal.open { display: flex; }
+  .report-panel {
+    width: min(900px, 96vw);
+    max-height: min(760px, 92vh);
+    background: #050708;
+    border: 1px solid var(--green-dim);
+    box-shadow: 0 0 40px rgba(0,255,65,0.16), inset 0 0 30px rgba(0,255,65,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+  .report-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.04) 2px, rgba(0,255,65,0.04) 4px);
+    z-index: 2;
+  }
+  .report-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,0.72) 100%);
+    z-index: 3;
+  }
+  .report-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 14px;
+    position: relative;
+    z-index: 4;
+  }
+  .report-title {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 2px;
+    font-size: 13px;
+    color: var(--green);
+    text-shadow: 0 0 14px rgba(0,255,65,0.4);
+  }
+  .report-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--green-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .report-close:hover { border-color: var(--green); color: var(--green); }
+  .report-terminal {
+    position: relative;
+    z-index: 4;
+    padding: 18px;
+    min-height: 420px;
+    max-height: calc(92vh - 70px);
+    overflow: auto;
+    color: var(--green);
+    white-space: pre-wrap;
+    line-height: 1.55;
+    text-shadow: 0 0 8px rgba(0,255,65,0.3);
+  }
+  .report-terminal .dim { color: var(--muted); }
+  .report-terminal .amber { color: var(--amber); }
+  .report-terminal .red { color: var(--red); }
+  .report-terminal .cyan { color: var(--cyan); }
+  .report-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .report-actions button, .report-actions a {
+    background: rgba(0,255,65,0.04);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 7px 12px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .report-actions button:hover, .report-actions a:hover { background: rgba(0,255,65,0.12); }
+  
   /* Filters */
   .filters {
     display: flex;
@@ -379,8 +478,18 @@
   </div>
   
   <div class="search-box">
-    <input type="text" id="search" placeholder="Search by name, address, or agent ID...">
-    <button type="button" id="search-btn">SCAN</button>
+    <input type="text" id="search" placeholder="Input agent name to run report...........">
+    <button type="button" id="search-btn">ANALYZE</button>
+  </div>
+
+  <div id="cred-report-modal" class="report-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cred-report-title">
+    <div class="report-panel">
+      <div class="report-header">
+        <div id="cred-report-title" class="report-title">CRED.EXCHANGE // AGENT REPORT</div>
+        <button type="button" id="report-close" class="report-close">[ CLOSE ]</button>
+      </div>
+      <div id="report-terminal" class="report-terminal"></div>
+    </div>
   </div>
   
   <div class="chain-filters">
@@ -574,10 +683,102 @@ function loadDemoStats() {
   sd('total-x402','tk-x402','4,204');
 }
 
-function doSearch() {
-  currentSearch = document.getElementById('search').value.trim();
-  currentPage = 1;
-  fetchAgents();
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+}
+
+function reportScoreBar(score) {
+  const normalized = Math.max(0, Math.min(100, Number(score) || 0));
+  const filled = Math.round(normalized / 10);
+  return '█'.repeat(filled) + '░'.repeat(10 - filled);
+}
+
+function reportChain(agent) {
+  if (Number(agent.chain_id) === 900901) return 'SOLANA';
+  if (Number(agent.chain_id) === 8453) return 'BASE';
+  return agent.chain || `CHAIN ${agent.chain_id || 'UNKNOWN'}`;
+}
+
+function reportRecommendation(agent) {
+  const score = Number(agent.cred_score) || 0;
+  if (score >= 91) return 'PREFERRED COUNTERPARTY. HIGHEST CURRENT CRED TIER.';
+  if (score >= 76) return 'PRIME COUNTERPARTY. STRONG CRED PROFILE.';
+  if (score >= 51) return 'QUALIFIED AGENT. ACCEPTABLE FOR ROUTINE INTERACTION.';
+  if (score >= 26) return 'MARGINAL AGENT. PROCEED WITH CAUTION.';
+  return 'JUNK TIER. HIGH RISK OR INSUFFICIENT SIGNAL.';
+}
+
+function openCredReportModal(query) {
+  const modal = document.getElementById('cred-report-modal');
+  const terminal = document.getElementById('report-terminal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  terminal.innerHTML = `<span class="dim">CRED.EXCHANGE REPORT ENGINE</span>\n&gt; INPUT: ${escapeHtml(query || 'UNKNOWN')}\n&gt; ANALYZING<span class="spinner">▓</span>`;
+}
+
+function closeCredReportModal() {
+  const modal = document.getElementById('cred-report-modal');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+async function runCredReport() {
+  const input = document.getElementById('search');
+  const query = input.value.trim();
+  const terminal = document.getElementById('report-terminal');
+  if (!query) {
+    openCredReportModal('NO INPUT');
+    terminal.innerHTML = '<span class="red">ERROR: INPUT AGENT NAME TO RUN REPORT.</span>';
+    return;
+  }
+
+  openCredReportModal(query);
+  try {
+    const params = new URLSearchParams({ page: 1, limit: 5, sort: 'cred_score', dir: 'desc', q: query });
+    const res = await fetch(`${API}/api/terminal/agents?${params}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const agents = data.agents || [];
+    const needle = query.toLowerCase();
+    const agent = agents.find(a => (a.name || '').toLowerCase() === needle) || agents[0];
+    if (!agent) throw new Error(`NO MATCH FOR "${query}"`);
+
+    const score = Number(agent.cred_score) || 0;
+    const tier = agent.cred_tier || 'JUNK';
+    const token = agent.token_symbol ? `$${agent.token_symbol}` : (agent.x402_supported ? 'x402' : 'NONE');
+    const mcap = agent.token_market_cap ? formatMcap(agent.token_market_cap) : '—';
+    const change = agent.price_change_24h != null && agent.token_symbol
+      ? `${agent.price_change_24h >= 0 ? '+' : ''}${Number(agent.price_change_24h).toFixed(1)}%`
+      : '—';
+    const id = agent.token_id || agent.agent_id || agent.id || '';
+    const profileUrl = `https://helixa.xyz/agent.html?id=${encodeURIComponent(id)}`;
+    const lines = [
+      'CRED.EXCHANGE REPORT ENGINE',
+      '────────────────────────────────────────',
+      `SUBJECT: ${agent.name || 'UNNAMED AGENT'}`,
+      `CHAIN: ${reportChain(agent)}`,
+      `PLATFORM: ${agent.platform || '—'}`,
+      `CRED SCORE: ${reportScoreBar(score)} ${score}/100`,
+      `RATING: ${tier}`,
+      '────────────────────────────────────────',
+      `TOKEN: ${token}`,
+      `MARKET CAP: ${mcap}`,
+      `24H: ${change}`,
+      `x402: ${agent.x402_supported ? 'SUPPORTED' : 'NOT DETECTED'}`,
+      `ADDRESS: ${agent.address || '—'}`,
+      '────────────────────────────────────────',
+      `RECOMMENDATION: ${reportRecommendation(agent)}`,
+    ];
+
+    terminal.innerHTML = `${lines.map(escapeHtml).join('\n')}\n<div class="report-actions"><a href="${profileUrl}" target="_blank" rel="noopener">[ VIEW PROFILE ]</a><button type="button" id="report-new">[ NEW REPORT ]</button></div>`;
+    document.getElementById('report-new').addEventListener('click', () => {
+      closeCredReportModal();
+      input.focus();
+      input.select();
+    });
+  } catch (err) {
+    terminal.innerHTML = `<span class="red">ERROR: ${escapeHtml(err.message || 'REPORT FAILED')}</span>\n\n<span class="dim">Try a full agent name, e.g. Bendr 2.0 or Bankr.</span>`;
+  }
 }
 
 function setChain(chain, btn) {
@@ -617,8 +818,11 @@ function sortBy(col) {
 function prevPage() { if (currentPage > 1) { currentPage--; fetchAgents(); } }
 function nextPage() { if (currentPage < totalPages) { currentPage++; fetchAgents(); } }
 
-document.getElementById('search').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
-document.getElementById('search-btn').addEventListener('click', doSearch);
+document.getElementById('search').addEventListener('keydown', e => { if (e.key === 'Enter') runCredReport(); });
+document.getElementById('search-btn').addEventListener('click', runCredReport);
+document.getElementById('report-close').addEventListener('click', closeCredReportModal);
+document.getElementById('cred-report-modal').addEventListener('click', e => { if (e.target.id === 'cred-report-modal') closeCredReportModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCredReportModal(); });
 document.querySelectorAll('.chain-btn').forEach(btn => {
   btn.addEventListener('click', () => setChain(btn.dataset.chain || 'all', btn));
 });

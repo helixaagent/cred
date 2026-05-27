@@ -25,6 +25,11 @@ for (const expected of [
   "if (currentChain !== 'all') params.set('chain', currentChain);",
   "document.querySelectorAll('.chain-btn').forEach(btn => {",
   "btn.addEventListener('click', () => setChain(btn.dataset.chain || 'all', btn));",
+  'placeholder="Input agent name to run report..........."',
+  '<button type="button" id="search-btn">ANALYZE</button>',
+  'id="cred-report-modal"',
+  'function openCredReportModal',
+  'async function runCredReport',
 ]) {
   if (!html.includes(expected)) fail(`index.html missing ${expected}`);
 }
@@ -54,6 +59,8 @@ for (const forbidden of [
   '>REGISTERED<',
   'formatDate(',
   'colspan="10"',
+  '<button type="button" id="search-btn">SCAN</button>',
+  'placeholder="Search by name, address, or agent ID..."',
 ]) {
   if (html.includes(forbidden)) fail(`index.html still contains ${forbidden}`);
 }
