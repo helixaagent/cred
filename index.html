@@ -126,86 +126,6 @@
   }
   .ticker-sep { color: rgba(110,236,216,0.3); padding: 0 4px; }
 
-  /* Featured Carousel */
-  .carousel-wrap {
-    position: relative;
-    max-width: 460px;
-    margin: 16px auto 8px;
-    overflow: hidden;
-    border-radius: 12px;
-  }
-  .carousel-track {
-    display: flex;
-    transition: transform 0.5s ease;
-  }
-  .carousel-card {
-    min-width: 100%;
-    display: block;
-    padding: 14px 18px;
-    background: linear-gradient(135deg, rgba(21,18,32,0.95), rgba(10,10,20,0.95));
-    border: 1px solid rgba(110,236,216,0.25);
-    border-radius: 12px;
-    text-decoration: none;
-    box-sizing: border-box;
-    transition: border-color 0.3s;
-  }
-  .carousel-card:hover { border-color: rgba(110,236,216,0.5); }
-  .carousel-card .card-inner { display: flex; align-items: center; gap: 14px; }
-  .carousel-card .card-img {
-    width: 64px; height: 64px; border-radius: 10px;
-    border: 1.5px solid rgba(110,236,216,0.3);
-    object-fit: cover;
-  }
-  .carousel-card .card-body { flex: 1; min-width: 0; }
-  .carousel-card .card-name {
-    font-family: 'Orbitron', monospace;
-    font-size: 0.95rem;
-    color: #eae6f2;
-    margin-bottom: 4px;
-  }
-  .carousel-card .card-name .featured-tag {
-    font-size: 0.65rem;
-    color: #6a6a8e;
-    font-family: monospace;
-    margin-left: 6px;
-  }
-  .carousel-card .card-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
-  .carousel-card .card-badge {
-    padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
-  }
-  .carousel-card .card-desc {
-    color: #6a6a8e; font-size: 11px; font-family: monospace;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .carousel-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(10,10,15,0.7);
-    border: 1px solid rgba(110,236,216,0.3);
-    color: #6eecd8;
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 3;
-    transition: background 0.2s;
-  }
-  .carousel-nav:hover { background: rgba(110,236,216,0.15); }
-  .carousel-nav.prev { left: 6px; }
-  .carousel-nav.next { right: 6px; }
-  .carousel-dots {
-    display: flex; justify-content: center; gap: 6px;
-    margin-top: 8px;
-  }
-  .carousel-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: rgba(110,236,216,0.2);
-    border: none; cursor: pointer; padding: 0;
-    transition: background 0.3s;
-  }
-  .carousel-dot.active { background: #6eecd8; }
   
   /* Search */
   .search-box {
@@ -460,24 +380,24 @@
   
   <div class="search-box">
     <input type="text" id="search" placeholder="Search by name, address, or agent ID...">
-    <button onclick="doSearch()">SCAN</button>
+    <button type="button" id="search-btn">SCAN</button>
   </div>
   
   <div class="chain-filters">
-    <button class="chain-btn active" data-chain="all" onclick="setChain('all',this)">⛓ ALL</button>
-    <button class="chain-btn" data-chain="base" onclick="setChain('base',this)">🔵 BASE</button>
-    <button class="chain-btn" data-chain="solana" onclick="setChain('solana',this)">🟣 SOLANA</button>
+    <button type="button" class="chain-btn active" data-chain="all">⛓ ALL</button>
+    <button type="button" class="chain-btn" data-chain="base">🔵 BASE</button>
+    <button type="button" class="chain-btn" data-chain="solana">🟣 SOLANA</button>
   </div>
   <div class="filters">
-    <button class="filter-btn active" data-tier="all" onclick="setFilter('all',this)">ALL</button>
-    <button class="filter-btn" data-tier="new" onclick="setFilter('new',this)" style="color:#00ffff;border-color:#00ffff">🆕 NEW</button>
-    <button class="filter-btn" data-tier="trending" onclick="setFilter('trending',this)" style="color:#ffd700;border-color:#ffd700">🔥 TRENDING</button>
-    <button class="filter-btn" data-tier="PREFERRED" onclick="setFilter('PREFERRED',this)">PREFERRED</button>
-    <button class="filter-btn" data-tier="PRIME" onclick="setFilter('PRIME',this)">PRIME</button>
-    <button class="filter-btn" data-tier="QUALIFIED" onclick="setFilter('QUALIFIED',this)">QUALIFIED</button>
-    <button class="filter-btn" data-tier="MARGINAL" onclick="setFilter('MARGINAL',this)">MARGINAL</button>
-    <button class="filter-btn" data-tier="JUNK" onclick="setFilter('JUNK',this)">JUNK</button>
-    <button class="filter-btn" data-tier="x402" onclick="setFilter('x402',this)">x402 ✓</button>
+    <button type="button" class="filter-btn active" data-tier="all">ALL</button>
+    <button type="button" class="filter-btn" data-tier="new" style="color:#00ffff;border-color:#00ffff">🆕 NEW</button>
+    <button type="button" class="filter-btn" data-tier="trending" style="color:#ffd700;border-color:#ffd700">🔥 TRENDING</button>
+    <button type="button" class="filter-btn" data-tier="PREFERRED">PREFERRED</button>
+    <button type="button" class="filter-btn" data-tier="PRIME">PRIME</button>
+    <button type="button" class="filter-btn" data-tier="QUALIFIED">QUALIFIED</button>
+    <button type="button" class="filter-btn" data-tier="MARGINAL">MARGINAL</button>
+    <button type="button" class="filter-btn" data-tier="JUNK">JUNK</button>
+    <button type="button" class="filter-btn" data-tier="x402">x402 ✓</button>
   </div>
   
   <div class="table-wrap">
@@ -582,7 +502,6 @@ async function fetchAgents() {
     if (currentFilter !== 'all') params.set('filter', currentFilter);
     if (currentChain !== 'all') params.set('chain', currentChain);
     if (currentSearch) params.set('q', currentSearch);
-    console.log('fetchAgents chain:', currentChain, 'params:', params.toString());
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
@@ -671,11 +590,10 @@ function doSearch() {
 }
 
 function setChain(chain, btn) {
-  console.log('setChain:', chain);
-  currentChain = chain;
+  currentChain = chain || 'all';
   currentPage = 1;
   document.querySelectorAll('.chain-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   fetchAgents();
 }
 
@@ -709,6 +627,13 @@ function prevPage() { if (currentPage > 1) { currentPage--; fetchAgents(); } }
 function nextPage() { if (currentPage < totalPages) { currentPage++; fetchAgents(); } }
 
 document.getElementById('search').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+document.getElementById('search-btn').addEventListener('click', doSearch);
+document.querySelectorAll('.chain-btn').forEach(btn => {
+  btn.addEventListener('click', () => setChain(btn.dataset.chain || 'all', btn));
+});
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => setFilter(btn.dataset.tier || 'all', btn));
+});
 
 fetchAgents();
 

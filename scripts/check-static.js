@@ -15,11 +15,16 @@ const fallback = fs.readFileSync(fallbackPath, 'utf8');
 
 for (const expected of [
   '<title>CRED Exchange',
-  '<h1>CRED EXCHANGE</h1>',
-  'CRED EXCHANGE v0.1',
+  '<h1>CRED.EXCHANGE</h1>',
+  'CRED.EXCHANGE v0.1',
   'https://api.helixa.xyz',
   'https://helixa.xyz/agent.html?id=',
-  'https://helixa.xyz/agent/${tid}',
+  'data-chain="all"',
+  'data-chain="base"',
+  'data-chain="solana"',
+  "if (currentChain !== 'all') params.set('chain', currentChain);",
+  "document.querySelectorAll('.chain-btn').forEach(btn => {",
+  "btn.addEventListener('click', () => setChain(btn.dataset.chain || 'all', btn));",
 ]) {
   if (!html.includes(expected)) fail(`index.html missing ${expected}`);
 }
@@ -39,16 +44,16 @@ try {
   fail(`terminal/fallback.json is invalid JSON: ${error.message}`);
 }
 
-const tickerStart = html.indexOf('// Ticker: fetch token stats + terminal stats');
-const carouselStart = html.indexOf('// Carousel');
-const tickerScript = tickerStart >= 0 && carouselStart > tickerStart ? html.slice(tickerStart, carouselStart) : '';
-const duplicateIndex = tickerScript.indexOf('duplicateTickerContent()');
-for (const id of ['tk-base', 'tk-solana']) {
-  const updateIndex = tickerScript.indexOf(`setTicker('${id}'`);
-  if (updateIndex < 0) fail(`ticker script does not update ${id}`);
-  if (duplicateIndex >= 0 && updateIndex > duplicateIndex) fail(`ticker script updates ${id} after duplicating ticker content`);
+for (const forbidden of [
+  'onclick="setChain',
+  'console.log(\'setChain:',
+  'console.log(\'fetchAgents chain:',
+  'carousel-wrap',
+  'carousel-track',
+  'renderCarousel',
+]) {
+  if (html.includes(forbidden)) fail(`index.html still contains ${forbidden}`);
 }
-if (!tickerScript.includes('replace(/\\sid="[^"]+"/g')) fail('ticker duplicate should strip IDs from cloned content');
 
 for (const file of ['vercel.json', 'README.md', 'icon.svg', 'og-image.svg']) {
   if (!fs.existsSync(path.join(root, file))) fail(`missing ${file}`);
