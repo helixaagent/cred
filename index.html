@@ -318,7 +318,7 @@
     .header h1 { font-size: 22px; }
     .header .subtitle { font-size: 10px; }
     td, th { padding: 6px 4px; font-size: 11px; white-space: nowrap; }
-    /* Hide PLATFORM, ADDRESS, REGISTERED on mobile */
+    /* Hide PLATFORM and ADDRESS on mobile */
     td:nth-child(4), th:nth-child(4),
     .hide-mobile { display: none; }
     .filter-btn { padding: 4px 8px; font-size: 10px; }
@@ -414,11 +414,10 @@
           <!-- REV column hidden until more data populated — shown on agent detail pages only -->
           <!-- <th onclick="sortBy('revenue_self_reported')" data-col="revenue_self_reported" class="hide-mobile">REV</th> -->
           <th data-col="address" class="hide-mobile">ADDRESS</th>
-          <th onclick="sortBy('created_at')" data-col="created_at" class="hide-mobile">REGISTERED</th>
         </tr>
       </thead>
       <tbody id="agents-body">
-        <tr><td colspan="10" class="loading"><span class="spinner">▓</span> SCANNING NETWORK...</td></tr>
+        <tr><td colspan="8" class="loading"><span class="spinner">▓</span> SCANNING NETWORK...</td></tr>
       </tbody>
     </table>
   </div>
@@ -481,16 +480,9 @@ function formatRev(a) {
   return `<span style="color:#6eecd8;font-weight:700">${formatted}</span>${tag}`;
 }
 
-function formatDate(ts) {
-  if (!ts) return '—';
-  const d = typeof ts === 'number' ? new Date(ts * 1000) : new Date(ts);
-  if (isNaN(d.getTime())) return '—';
-  return d.toISOString().split('T')[0];
-}
-
 async function fetchAgents() {
   const body = document.getElementById('agents-body');
-  body.innerHTML = '<tr><td colspan="10" class="loading"><span class="spinner">▓</span> SCANNING...</td></tr>';
+  body.innerHTML = '<tr><td colspan="8" class="loading"><span class="spinner">▓</span> SCANNING...</td></tr>';
   
   try {
     const params = new URLSearchParams({
@@ -546,7 +538,7 @@ async function fetchAgents() {
         return;
       }
     } catch(e) { console.error('Fallback also failed:', e); }
-    body.innerHTML = `<tr><td colspan="10" style="color:var(--red);padding:20px">ERROR: ${err.message}<br><br><span style="color:var(--muted)">Try opening in Chrome/Safari. Some browsers block cross-origin API requests.</span></td></tr>`;
+    body.innerHTML = `<tr><td colspan="8" style="color:var(--red);padding:20px">ERROR: ${err.message}<br><br><span style="color:var(--muted)">Try opening in Chrome/Safari. Some browsers block cross-origin API requests.</span></td></tr>`;
     loadDemoStats();
   }
 }
@@ -554,7 +546,7 @@ async function fetchAgents() {
 function renderAgents(agents) {
   const body = document.getElementById('agents-body');
   if (!agents.length) {
-    body.innerHTML = '<tr><td colspan="10" style="padding:20px;color:var(--muted)">NO AGENTS FOUND</td></tr>';
+    body.innerHTML = '<tr><td colspan="8" style="padding:20px;color:var(--muted)">NO AGENTS FOUND</td></tr>';
     return;
   }
   body.innerHTML = agents.map(a => {
@@ -570,7 +562,6 @@ function renderAgents(agents) {
       <!-- REV cell hidden -->
       <!-- <td class="hide-mobile">${formatRev(a)}</td> -->
       <td class="hide-mobile"><span class="addr" title="${a.address || ''}">${shortAddr(a.address)}</span></td>
-      <td class="hide-mobile" style="color:var(--muted)">${formatDate(a.created_at)}</td>
     </tr>`;
   }).join('');
 }

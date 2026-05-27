@@ -51,6 +51,9 @@ for (const forbidden of [
   'carousel-wrap',
   'carousel-track',
   'renderCarousel',
+  '>REGISTERED<',
+  'formatDate(',
+  'colspan="10"',
 ]) {
   if (html.includes(forbidden)) fail(`index.html still contains ${forbidden}`);
 }
