@@ -237,6 +237,13 @@
   .report-terminal .amber { color: var(--amber); }
   .report-terminal .red { color: var(--red); }
   .report-terminal .cyan { color: var(--cyan); }
+  .report-line { min-height: 1.55em; }
+  .report-cursor {
+    display: inline-block;
+    color: var(--green);
+    animation: reportBlink 1s step-end infinite;
+  }
+  @keyframes reportBlink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
   .report-actions {
     display: flex;
     gap: 10px;
@@ -708,15 +715,89 @@ function reportRecommendation(agent) {
   return 'JUNK TIER. HIGH RISK OR INSUFFICIENT SIGNAL.';
 }
 
+let activeReportRun = 0;
+
+function sleepReport(ms, runId) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (runId !== activeReportRun) reject(new Error('REPORT_CANCELLED'));
+      else resolve();
+    }, ms);
+  });
+}
+
+function clearReportCursor() {
+  document.querySelectorAll('.report-cursor').forEach(el => el.remove());
+}
+
+function showReportCursor() {
+  const terminal = document.getElementById('report-terminal');
+  clearReportCursor();
+  const cursor = document.createElement('span');
+  cursor.className = 'report-cursor';
+  cursor.textContent = '█';
+  terminal.appendChild(cursor);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+function appendReportLine(text = '', cls = '') {
+  const terminal = document.getElementById('report-terminal');
+  clearReportCursor();
+  const line = document.createElement('div');
+  line.className = `report-line${cls ? ' ' + cls : ''}`;
+  line.textContent = text;
+  terminal.appendChild(line);
+  showReportCursor();
+  return line;
+}
+
+async function typeReportLine(text = '', delay = 12, cls = '', runId = activeReportRun) {
+  const line = appendReportLine('', cls);
+  for (const char of text) {
+    if (runId !== activeReportRun) throw new Error('REPORT_CANCELLED');
+    line.textContent += char;
+    line.scrollIntoView({ block: 'end' });
+    await sleepReport(delay, runId);
+  }
+  return line;
+}
+
+function appendReportActions(profileUrl, input) {
+  const terminal = document.getElementById('report-terminal');
+  clearReportCursor();
+  const actions = document.createElement('div');
+  actions.className = 'report-actions';
+  const profile = document.createElement('a');
+  profile.href = profileUrl;
+  profile.target = '_blank';
+  profile.rel = 'noopener';
+  profile.textContent = '[ VIEW PROFILE ]';
+  const next = document.createElement('button');
+  next.type = 'button';
+  next.id = 'report-new';
+  next.textContent = '[ NEW REPORT ]';
+  next.addEventListener('click', () => {
+    closeCredReportModal();
+    input.focus();
+    input.select();
+  });
+  actions.appendChild(profile);
+  actions.appendChild(next);
+  terminal.appendChild(actions);
+  showReportCursor();
+}
+
 function openCredReportModal(query) {
   const modal = document.getElementById('cred-report-modal');
   const terminal = document.getElementById('report-terminal');
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
-  terminal.innerHTML = `<span class="dim">CRED.EXCHANGE REPORT ENGINE</span>\n&gt; INPUT: ${escapeHtml(query || 'UNKNOWN')}\n&gt; ANALYZING<span class="spinner">▓</span>`;
+  terminal.innerHTML = '';
+  showReportCursor();
 }
 
 function closeCredReportModal() {
+  activeReportRun += 1;
   const modal = document.getElementById('cred-report-modal');
   modal.classList.remove('open');
   modal.setAttribute('aria-hidden', 'true');
@@ -725,23 +806,46 @@ function closeCredReportModal() {
 async function runCredReport() {
   const input = document.getElementById('search');
   const query = input.value.trim();
-  const terminal = document.getElementById('report-terminal');
-  if (!query) {
-    openCredReportModal('NO INPUT');
-    terminal.innerHTML = '<span class="red">ERROR: INPUT AGENT NAME TO RUN REPORT.</span>';
-    return;
-  }
+  const runId = activeReportRun + 1;
+  activeReportRun = runId;
+  openCredReportModal(query || 'NO INPUT');
 
-  openCredReportModal(query);
   try {
+    await typeReportLine('CRED.EXCHANGE REPORT ENGINE v0.1', 18, 'cyan', runId);
+    await sleepReport(220, runId);
+    await typeReportLine('BOOTING ANALYZER KERNEL...', 16, '', runId);
+    await sleepReport(260, runId);
+    await typeReportLine(`INPUT RECEIVED: ${query || 'NO INPUT'}`, 14, 'dim', runId);
+    await sleepReport(220, runId);
+
+    if (!query) {
+      await typeReportLine('ERROR: INPUT AGENT NAME TO RUN REPORT.', 18, 'red', runId);
+      return;
+    }
+
+    await typeReportLine('SCANNING AGENT INDEX...', 18, '', runId);
     const params = new URLSearchParams({ page: 1, limit: 5, sort: 'cred_score', dir: 'desc', q: query });
-    const res = await fetch(`${API}/api/terminal/agents?${params}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const fetchPromise = fetch(`${API}/api/terminal/agents?${params}`).then(async res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    });
+
+    await sleepReport(500, runId);
+    await typeReportLine('MATCHING NAME AGAINST MULTICHAIN REGISTRY...', 10, 'dim', runId);
+    await sleepReport(420, runId);
+    await typeReportLine('CALCULATING CRED SIGNALS...', 18, '', runId);
+    const data = await fetchPromise;
+    if (runId !== activeReportRun) throw new Error('REPORT_CANCELLED');
+
     const agents = data.agents || [];
     const needle = query.toLowerCase();
     const agent = agents.find(a => (a.name || '').toLowerCase() === needle) || agents[0];
     if (!agent) throw new Error(`NO MATCH FOR "${query}"`);
+
+    await sleepReport(500, runId);
+    await typeReportLine('RECORD FOUND. PRINTING REPORT...', 16, 'cyan', runId);
+    await sleepReport(250, runId);
+    appendReportLine('', '', runId);
 
     const score = Number(agent.cred_score) || 0;
     const tier = agent.cred_tier || 'JUNK';
@@ -753,7 +857,7 @@ async function runCredReport() {
     const id = agent.token_id || agent.agent_id || agent.id || '';
     const profileUrl = `https://helixa.xyz/agent.html?id=${encodeURIComponent(id)}`;
     const lines = [
-      'CRED.EXCHANGE REPORT ENGINE',
+      'CRED.EXCHANGE AGENT REPORT',
       '────────────────────────────────────────',
       `SUBJECT: ${agent.name || 'UNNAMED AGENT'}`,
       `CHAIN: ${reportChain(agent)}`,
@@ -770,14 +874,16 @@ async function runCredReport() {
       `RECOMMENDATION: ${reportRecommendation(agent)}`,
     ];
 
-    terminal.innerHTML = `${lines.map(escapeHtml).join('\n')}\n<div class="report-actions"><a href="${profileUrl}" target="_blank" rel="noopener">[ VIEW PROFILE ]</a><button type="button" id="report-new">[ NEW REPORT ]</button></div>`;
-    document.getElementById('report-new').addEventListener('click', () => {
-      closeCredReportModal();
-      input.focus();
-      input.select();
-    });
+    for (const line of lines) {
+      const cls = line.startsWith('RECOMMENDATION') ? 'amber' : '';
+      await typeReportLine(line, 5, cls, runId);
+    }
+    appendReportActions(profileUrl, input);
   } catch (err) {
-    terminal.innerHTML = `<span class="red">ERROR: ${escapeHtml(err.message || 'REPORT FAILED')}</span>\n\n<span class="dim">Try a full agent name, e.g. Bendr 2.0 or Bankr.</span>`;
+    if (err.message === 'REPORT_CANCELLED') return;
+    if (activeReportRun !== runId) return;
+    await typeReportLine(`ERROR: ${err.message || 'REPORT FAILED'}`, 18, 'red', runId);
+    await typeReportLine('Try a full agent name, e.g. Bendr 2.0 or Bankr.', 12, 'dim', runId);
   }
 }
 

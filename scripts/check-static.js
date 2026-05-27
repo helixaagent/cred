@@ -30,6 +30,11 @@ for (const expected of [
   'id="cred-report-modal"',
   'function openCredReportModal',
   'async function runCredReport',
+  'async function typeReportLine',
+  'function showReportCursor',
+  'report-cursor',
+  'SCANNING AGENT INDEX',
+  'CALCULATING CRED SIGNALS',
 ]) {
   if (!html.includes(expected)) fail(`index.html missing ${expected}`);
 }
