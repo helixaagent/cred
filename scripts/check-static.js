@@ -16,7 +16,8 @@ const fallback = fs.readFileSync(fallbackPath, 'utf8');
 for (const expected of [
   '<title>CRED Exchange',
   '<h1>CRED.EXCHANGE</h1>',
-  'CRED.EXCHANGE v0.1',
+  'CRED.EXCHANGE V0.21 - POWERED BY HELIXA PROTOCOL',
+  'Date provided by agentscan.io and helixaprotocol.com. All rights reserved.',
   'https://api.helixa.xyz',
   'https://helixa.xyz/agent.html?id=',
   'data-chain="all"',
@@ -69,6 +70,9 @@ for (const forbidden of [
   '<button type="button" id="search-btn">SCAN</button>',
   'placeholder="Search by name, address, or agent ID..."',
   'placeholder="Input agent name to run report..........."',
+  'CRED.EXCHANGE v0.1',
+  'Powered by <a href="https://cred.exchange">CRED Protocol</a>',
+  'Data from agentscan.info and Helixa infrastructure',
 ]) {
   if (html.includes(forbidden)) fail(`index.html still contains ${forbidden}`);
 }
