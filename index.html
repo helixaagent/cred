@@ -428,7 +428,7 @@
     <div class="subtitle">Agent Reputation Scanner — Multi-Chain</div>
     <!-- Stats Ticker -->
     <div style="padding:12px 0;font-family:monospace;font-size:14px;color:#6eecd8;text-align:center">
-      <span id="ticker-text">ECOSYSTEM $CRED ↓ -17.28%</span>
+      <span id="ticker-text">ECOSYSTEM TOKEN: $CRED | MARKET CAP: $223K | 24H VOLUME: $14.7K</span>
     </div>
     <script>
     // Update ticker with live DexScreener data
@@ -439,10 +439,12 @@
         .then(data => {
           if (!data.pairs || data.pairs.length === 0) return;
           const primary = data.pairs[0];
+          const mcap = primary.marketCap || primary.fdv;
+          const vol24h = primary.volume?.h24 || 0;
           const change = primary.priceChange?.h24 ?? 0;
           const sign = change >= 0 ? '↑' : '↓';
           const color = change >= 0 ? '#6eecd8' : '#ff6b6b';
-          const text = `ECOSYSTEM $CRED <span style="color:${color}">${sign} ${Math.abs(change).toFixed(2)}%</span>`;
+          const text = `ECOSYSTEM TOKEN: $CRED <span style="color:${color}">${sign} ${Math.abs(change).toFixed(2)}%</span> | MARKET CAP: ${fmt(mcap)} | 24H VOLUME: ${fmt(vol24h)}`;
           document.getElementById('ticker-text').innerHTML = text;
         })
         .catch(() => { /* keep static */ });
