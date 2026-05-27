@@ -38,6 +38,12 @@ for (const expected of [
   'CALCULATING CRED SIGNALS',
   'function findBestReportAgent',
   'MATCHING INPUT AGAINST NAME / ADDRESS / ID...',
+  'id="submit-agent-btn"',
+  'SUBMIT AGENT',
+  'id="submit-agent-modal"',
+  'id="submit-agent-form"',
+  'async function submitAgentListing',
+  '/api/terminal/submit-agent',
 ]) {
   if (!html.includes(expected)) fail(`index.html missing ${expected}`);
 }

@@ -261,6 +261,68 @@
     cursor: pointer;
   }
   .report-actions button:hover, .report-actions a:hover { background: rgba(0,255,65,0.12); }
+  .submit-agent-btn {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1500;
+    background: var(--green-dark);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    padding: 10px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    font-weight: 700;
+    box-shadow: 0 0 18px rgba(0,255,65,0.12);
+  }
+  .submit-agent-btn:hover { background: rgba(0,255,65,0.15); }
+  .submit-form {
+    position: relative;
+    z-index: 4;
+    padding: 18px;
+    display: grid;
+    gap: 12px;
+  }
+  .submit-form label {
+    display: grid;
+    gap: 5px;
+    color: var(--green-dim);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .submit-form input, .submit-form select, .submit-form textarea {
+    width: 100%;
+    background: rgba(0,255,65,0.05);
+    border: 1px solid var(--border);
+    color: var(--green);
+    padding: 9px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    outline: none;
+  }
+  .submit-form textarea { min-height: 74px; resize: vertical; }
+  .submit-form input:focus, .submit-form select:focus, .submit-form textarea:focus { border-color: var(--green-dim); }
+  .submit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .submit-status { min-height: 18px; font-size: 11px; color: var(--muted); }
+  .submit-status.ok { color: var(--green); }
+  .submit-status.error { color: var(--red); }
+  .submit-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .submit-actions button {
+    background: var(--green-dark);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    padding: 9px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .submit-actions button.secondary { background: transparent; border-color: var(--border); color: var(--green-dim); }
+  @media (max-width: 650px) {
+    .submit-agent-btn { top: 8px; right: 8px; padding: 7px 10px; font-size: 10px; }
+    .submit-grid { grid-template-columns: 1fr; }
+  }
   
   /* Filters */
   .filters {
@@ -448,6 +510,7 @@
 </style>
 </head>
 <body>
+<button type="button" id="submit-agent-btn" class="submit-agent-btn">SUBMIT AGENT</button>
 <div class="container">
   <div class="header">
     <h1>CRED.EXCHANGE</h1>
@@ -496,6 +559,46 @@
         <button type="button" id="report-close" class="report-close">[ CLOSE ]</button>
       </div>
       <div id="report-terminal" class="report-terminal"></div>
+    </div>
+  </div>
+
+  <div id="submit-agent-modal" class="report-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="submit-agent-title">
+    <div class="report-panel">
+      <div class="report-header">
+        <div id="submit-agent-title" class="report-title">CRED.EXCHANGE // SUBMIT AGENT</div>
+        <button type="button" id="submit-agent-close" class="report-close">[ CLOSE ]</button>
+      </div>
+      <form id="submit-agent-form" class="submit-form">
+        <input type="text" name="company" autocomplete="off" tabindex="-1" style="display:none">
+        <div class="submit-grid">
+          <label>Agent name *<input name="name" required maxlength="80" placeholder="Bendr 2.0"></label>
+          <label>Chain *
+            <select name="chain" required>
+              <option value="base">Base</option>
+              <option value="solana">Solana</option>
+              <option value="ethereum">Ethereum</option>
+              <option value="bsc">BSC</option>
+            </select>
+          </label>
+        </div>
+        <label>Agent address or ID *<input name="agent_identifier" required maxlength="160" placeholder="0x... / solana address / agent ID"></label>
+        <div class="submit-grid">
+          <label>Website<input name="website" type="url" maxlength="240" placeholder="https://..."></label>
+          <label>X / Twitter<input name="x_url" maxlength="120" placeholder="@agent or https://x.com/agent"></label>
+        </div>
+        <div class="submit-grid">
+          <label>Token symbol<input name="token_symbol" maxlength="24" placeholder="CRED"></label>
+          <label>Token address<input name="token_address" maxlength="160" placeholder="0x... / mint address"></label>
+        </div>
+        <label>x402 endpoint<input name="x402_endpoint" type="url" maxlength="240" placeholder="https://..."></label>
+        <label>Contact<input name="contact" maxlength="160" placeholder="email, telegram, discord, or X"></label>
+        <label>Notes<textarea name="notes" maxlength="500" placeholder="What does this agent do? Any proof links we should verify?"></textarea></label>
+        <div id="submit-agent-status" class="submit-status">Submissions are reviewed before they appear on CRED.EXCHANGE.</div>
+        <div class="submit-actions">
+          <button type="button" class="secondary" id="submit-agent-cancel">CANCEL</button>
+          <button type="submit">SUBMIT FOR VALIDATION</button>
+        </div>
+      </form>
     </div>
   </div>
   
@@ -830,6 +933,53 @@ function closeCredReportModal() {
   modal.setAttribute('aria-hidden', 'true');
 }
 
+function openSubmitAgentModal() {
+  const modal = document.getElementById('submit-agent-modal');
+  const status = document.getElementById('submit-agent-status');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  status.className = 'submit-status';
+  status.textContent = 'Submissions are reviewed before they appear on CRED.EXCHANGE.';
+  setTimeout(() => document.querySelector('#submit-agent-form input[name="name"]').focus(), 50);
+}
+
+function closeSubmitAgentModal() {
+  const modal = document.getElementById('submit-agent-modal');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+async function submitAgentListing(event) {
+  event.preventDefault();
+  const form = document.getElementById('submit-agent-form');
+  const status = document.getElementById('submit-agent-status');
+  const submitButton = form.querySelector('button[type="submit"]');
+  const payload = Object.fromEntries(new FormData(form).entries());
+  status.className = 'submit-status';
+  status.textContent = 'VALIDATING SUBMISSION...';
+  submitButton.disabled = true;
+  try {
+    const res = await fetch(`${API}/api/terminal/submit-agent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const detail = data.errors ? data.errors.join(', ') : (data.error || `HTTP ${res.status}`);
+      throw new Error(detail);
+    }
+    status.className = 'submit-status ok';
+    status.textContent = `SUBMISSION RECEIVED. PENDING VALIDATION. ID #${data.submission_id}`;
+    form.reset();
+  } catch (err) {
+    status.className = 'submit-status error';
+    status.textContent = `ERROR: ${err.message || 'SUBMISSION FAILED'}`;
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
 async function runCredReport() {
   const input = document.getElementById('search');
   const query = input.value.trim();
@@ -955,7 +1105,12 @@ document.getElementById('search').addEventListener('keydown', e => { if (e.key =
 document.getElementById('search-btn').addEventListener('click', runCredReport);
 document.getElementById('report-close').addEventListener('click', closeCredReportModal);
 document.getElementById('cred-report-modal').addEventListener('click', e => { if (e.target.id === 'cred-report-modal') closeCredReportModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCredReportModal(); });
+document.getElementById('submit-agent-btn').addEventListener('click', openSubmitAgentModal);
+document.getElementById('submit-agent-close').addEventListener('click', closeSubmitAgentModal);
+document.getElementById('submit-agent-cancel').addEventListener('click', closeSubmitAgentModal);
+document.getElementById('submit-agent-modal').addEventListener('click', e => { if (e.target.id === 'submit-agent-modal') closeSubmitAgentModal(); });
+document.getElementById('submit-agent-form').addEventListener('submit', submitAgentListing);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeCredReportModal(); closeSubmitAgentModal(); } });
 document.querySelectorAll('.chain-btn').forEach(btn => {
   btn.addEventListener('click', () => setChain(btn.dataset.chain || 'all', btn));
 });
