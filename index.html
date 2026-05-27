@@ -428,8 +428,27 @@
     <div class="subtitle">Agent Reputation Scanner — Multi-Chain</div>
     <!-- Stats Ticker -->
     <div class="ticker-wrap" style="height:40px;display:flex;align-items:center;justify-content:center;background:#05050a;border:1px solid #1a1a2e;font-family:monospace;font-size:14px;color:#6eecd8">
-      TOKEN: $CRED | MARKET CAP: $143K | 24H VOLUME: $37K | ALL TIME VOLUME: $113K
+      <span id="ticker-text">TOKEN: $CRED | MARKET CAP: $143K | 24H VOLUME: $37K | ALL TIME VOLUME: $113K</span>
     </div>
+    <script>
+    // Update ticker with live DexScreener data
+    (function() {
+      const fmt = v => { if(!v||v<=0) return '—'; if(v>=1e9) return '$'+(v/1e9).toFixed(1)+'B'; if(v>=1e6) return '$'+(v/1e6).toFixed(1)+'M'; if(v>=1e3) return '$'+(v/1e3).toFixed(0)+'K'; return '$'+Number(v).toFixed(0); };
+      fetch('https://api.dexscreener.com/latest/dex/tokens/0xAB3f23c2ABcB4E12Cc8B593C218A7ba64Ed17Ba3')
+        .then(r => r.json())
+        .then(data => {
+          if (!data.pairs || data.pairs.length === 0) return;
+          // Use primary pair (largest liquidity)
+          const primary = data.pairs[0];
+          const mcap = primary.marketCap || primary.fdv;
+          const vol24h = primary.volume?.h24 || 0;
+          const liquidity = primary.liquidity?.usd || 0;
+          const text = `TOKEN: $CRED | MARKET CAP: ${fmt(mcap)} | 24H VOLUME: ${fmt(vol24h)} | ALL TIME VOLUME: ${fmt(liquidity)}`;
+          document.getElementById('ticker-text').textContent = text;
+        })
+        .catch(() => { /* keep static */ });
+    })();
+    </script>
     <!-- Hidden compat spans for existing JS -->
     <span id="total-agents" style="display:none"></span>
     <span id="total-scored" style="display:none"></span>
