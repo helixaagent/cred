@@ -485,7 +485,7 @@
   </div>
   
   <div class="search-box">
-    <input type="text" id="search" placeholder="Input agent name to run report...........">
+    <input type="text" id="search" placeholder="Input agent name, address, or ID to run report...........">
     <button type="button" id="search-btn">ANALYZE</button>
   </div>
 
@@ -706,6 +706,33 @@ function reportChain(agent) {
   return agent.chain || `CHAIN ${agent.chain_id || 'UNKNOWN'}`;
 }
 
+function reportIdCandidates(agent) {
+  return [agent.token_id, agent.agent_id, agent.id, agent.token_address, agent.address]
+    .filter(Boolean)
+    .map(v => String(v).toLowerCase());
+}
+
+function findBestReportAgent(agents, query) {
+  const needle = String(query || '').trim().toLowerCase();
+  const numeric = /^\d+$/.test(needle);
+  if (!needle) return null;
+
+  const exact = agents.find(agent => {
+    const fields = [agent.name, agent.address, agent.token_address, agent.token_id, agent.agent_id, agent.id]
+      .filter(Boolean)
+      .map(v => String(v).toLowerCase());
+    return fields.includes(needle);
+  });
+  if (exact) return exact;
+
+  if (numeric) {
+    const numericExact = agents.find(agent => reportIdCandidates(agent).some(value => value === needle || value.endsWith(`-${needle}`)));
+    if (numericExact) return numericExact;
+  }
+
+  return agents[0] || null;
+}
+
 function reportRecommendation(agent) {
   const score = Number(agent.cred_score) || 0;
   if (score >= 91) return 'PREFERRED COUNTERPARTY. HIGHEST CURRENT CRED TIER.';
@@ -819,7 +846,7 @@ async function runCredReport() {
     await sleepReport(220, runId);
 
     if (!query) {
-      await typeReportLine('ERROR: INPUT AGENT NAME TO RUN REPORT.', 18, 'red', runId);
+      await typeReportLine('ERROR: INPUT AGENT NAME, ADDRESS, OR ID TO RUN REPORT.', 18, 'red', runId);
       return;
     }
 
@@ -831,15 +858,14 @@ async function runCredReport() {
     });
 
     await sleepReport(500, runId);
-    await typeReportLine('MATCHING NAME AGAINST MULTICHAIN REGISTRY...', 10, 'dim', runId);
+    await typeReportLine('MATCHING INPUT AGAINST NAME / ADDRESS / ID...', 10, 'dim', runId);
     await sleepReport(420, runId);
     await typeReportLine('CALCULATING CRED SIGNALS...', 18, '', runId);
     const data = await fetchPromise;
     if (runId !== activeReportRun) throw new Error('REPORT_CANCELLED');
 
     const agents = data.agents || [];
-    const needle = query.toLowerCase();
-    const agent = agents.find(a => (a.name || '').toLowerCase() === needle) || agents[0];
+    const agent = findBestReportAgent(agents, query);
     if (!agent) throw new Error(`NO MATCH FOR "${query}"`);
 
     await sleepReport(500, runId);
@@ -860,6 +886,7 @@ async function runCredReport() {
       'CRED.EXCHANGE AGENT REPORT',
       '────────────────────────────────────────',
       `SUBJECT: ${agent.name || 'UNNAMED AGENT'}`,
+      `AGENT ID: ${id || '—'}`,
       `CHAIN: ${reportChain(agent)}`,
       `PLATFORM: ${agent.platform || '—'}`,
       `CRED SCORE: ${reportScoreBar(score)} ${score}/100`,
@@ -883,7 +910,7 @@ async function runCredReport() {
     if (err.message === 'REPORT_CANCELLED') return;
     if (activeReportRun !== runId) return;
     await typeReportLine(`ERROR: ${err.message || 'REPORT FAILED'}`, 18, 'red', runId);
-    await typeReportLine('Try a full agent name, e.g. Bendr 2.0 or Bankr.', 12, 'dim', runId);
+    await typeReportLine('Try an agent name, address, or ID, e.g. Bendr 2.0, helixa-1, or 0x27E3...91Ea.', 12, 'dim', runId);
   }
 }
 
