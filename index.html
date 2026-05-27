@@ -443,7 +443,7 @@
           const mcap = primary.marketCap || primary.fdv;
           const vol24h = primary.volume?.h24 || 0;
           const liquidity = primary.liquidity?.usd || 0;
-          const text = `TOKEN: $CRED | MARKET CAP: ${fmt(mcap)} | 24H VOLUME: ${fmt(vol24h)} | ALL TIME VOLUME: ${fmt(liquidity)}`;
+          const text = `TOKEN: $CRED | MARKET CAP: ${fmt(mcap)} | 24H VOLUME: ${fmt(vol24h)}`;
           document.getElementById('ticker-text').textContent = text;
         })
         .catch(() => { /* keep static */ });
