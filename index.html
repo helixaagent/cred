@@ -466,9 +466,16 @@
         if(!res.ok) throw new Error(data.error || 'HTTP '+res.status);
         return data;
       };
-      const duplicateTickerContent = () => {
+      const duplicateTickerContent = (force = false) => {
         const track = document.getElementById('ticker-track');
         if(!track || track.dataset.duplicated === 'true') return;
+        // Only duplicate if we have real data (at least one non‑dash) or forced
+        const ids = ['tk-agents','tk-scored','tk-avg','tk-x402','tk-price','tk-mcap','tk-vol','tk-base','tk-solana','tk-mover'];
+        const hasData = ids.some(id => {
+          const el = document.getElementById(id);
+          return el && el.textContent !== '—' && el.textContent.trim() !== '';
+        });
+        if (!hasData && !force) return;
         track.innerHTML += track.innerHTML.replace(/\sid="[^"]+"/g, '');
         track.dataset.duplicated = 'true';
       };
@@ -500,7 +507,7 @@
 
         // Duplicate ticker content for seamless loop after values are populated.
         duplicateTickerContent();
-      }).catch(() => duplicateTickerContent());
+      }).catch(() => duplicateTickerContent(true)); // force duplicate on error to keep scroll
     })();
 
     // Carousel
