@@ -582,6 +582,7 @@ async function fetchAgents() {
     if (currentFilter !== 'all') params.set('filter', currentFilter);
     if (currentChain !== 'all') params.set('chain', currentChain);
     if (currentSearch) params.set('q', currentSearch);
+    console.log('fetchAgents chain:', currentChain, 'params:', params.toString());
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
@@ -670,6 +671,7 @@ function doSearch() {
 }
 
 function setChain(chain, btn) {
+  console.log('setChain:', chain);
   currentChain = chain;
   currentPage = 1;
   document.querySelectorAll('.chain-btn').forEach(b => b.classList.remove('active'));
