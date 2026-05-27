@@ -427,19 +427,8 @@
     <h1>CRED EXCHANGE</h1>
     <div class="subtitle">Agent Reputation Scanner — Multi-Chain</div>
     <!-- Stats Ticker -->
-    <div class="ticker-wrap">
-      <div class="ticker-track" id="ticker-track">
-        <span class="ticker-item"><span class="ticker-label">AGENTS</span><span class="ticker-val" id="tk-agents">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">SCORED</span><span class="ticker-val" id="tk-scored">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">AVG CRED</span><span class="ticker-val" id="tk-avg">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">x402</span><span class="ticker-val" id="tk-x402">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">$CRED</span><span class="ticker-val" id="tk-price">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">MCAP</span><span class="ticker-val" id="tk-mcap">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">24H VOL</span><span class="ticker-val" id="tk-vol">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">BASE</span><span class="ticker-val" id="tk-base">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">SOLANA</span><span class="ticker-val" id="tk-solana">—</span></span><span class="ticker-sep">▸</span>
-        <span class="ticker-item"><span class="ticker-label">TOP MOVER</span><span class="ticker-val" id="tk-mover">—</span></span><span class="ticker-sep">▸</span>
-      </div>
+    <div class="ticker-wrap" style="height:40px;display:flex;align-items:center;justify-content:center;background:#05050a;border:1px solid #1a1a2e;font-family:monospace;font-size:14px;color:#6eecd8">
+      TOKEN: $CRED | MARKET CAP: $143K | 24H VOLUME: $37K
     </div>
     <!-- Hidden compat spans for existing JS -->
     <span id="total-agents" style="display:none"></span>
@@ -456,53 +445,6 @@
     <div class="carousel-dots" id="carousel-dots"></div>
 
     <script>
-    // Ticker: fetch token stats + terminal stats
-    (function(){
-      const fmt = v => { if(!v||v<=0) return '—'; if(v>=1e9) return '$'+(v/1e9).toFixed(1)+'B'; if(v>=1e6) return '$'+(v/1e6).toFixed(1)+'M'; if(v>=1e3) return '$'+(v/1e3).toFixed(0)+'K'; return '$'+Number(v).toFixed(2); };
-      const setTicker = (id, value) => document.querySelectorAll('[id="'+id+'"]').forEach(el => { el.textContent = value; });
-      const getJson = async url => {
-        const res = await fetch(url);
-        const data = await res.json().catch(() => ({}));
-        if(!res.ok) throw new Error(data.error || 'HTTP '+res.status);
-        return data;
-      };
-      const duplicateTickerContent = () => {
-        const track = document.getElementById('ticker-track');
-        if(!track || track.dataset.duplicated === 'true') return;
-        track.innerHTML += track.innerHTML.replace(/\sid="[^"]+"/g, '');
-        track.dataset.duplicated = 'true';
-      };
-
-      Promise.allSettled([
-        getJson('https://api.helixa.xyz/api/terminal/agents?limit=1&sort=cred_score&dir=desc'),
-        getJson('https://api.helixa.xyz/api/terminal/agents?limit=1&sort=price_change_24h&dir=desc&filter=trending'),
-        getJson('https://api.helixa.xyz/api/terminal/agents?limit=1&q=Bendr')
-      ]).then(([termR, moverR, credR]) => {
-        const termData = termR.status==='fulfilled' ? termR.value : {};
-        const stats = termData.stats || {};
-        const moverData = moverR.status==='fulfilled' ? moverR.value : {};
-        const mover = (moverData.agents||[])[0];
-        const credAgent = credR.status==='fulfilled' ? ((credR.value.agents||[])[0]) : null;
-
-        if(stats.total != null) { const v=(stats.total).toLocaleString(); setTicker('tk-agents', v); setTicker('total-agents', v); }
-        if(stats.scored != null) { const v=(stats.scored).toLocaleString(); setTicker('tk-scored', v); setTicker('total-scored', v); }
-        if(stats.avgScore != null) { setTicker('tk-avg', stats.avgScore); setTicker('avg-score', stats.avgScore); }
-        if(stats.x402 != null) { const v=(stats.x402).toLocaleString(); setTicker('tk-x402', v); setTicker('total-x402', v); }
-        if(stats.base != null) setTicker('tk-base', (stats.base).toLocaleString());
-        if(stats.solana != null) setTicker('tk-solana', (stats.solana).toLocaleString());
-        // $CRED market data from the Bendr/CRED agent row in terminal DB
-        if(credAgent && credAgent.token_market_cap) {
-          setTicker('tk-mcap', fmt(credAgent.token_market_cap));
-          if(credAgent.volume_24h) setTicker('tk-vol', fmt(credAgent.volume_24h));
-          if(credAgent.price_change_24h != null) setTicker('tk-price', (credAgent.price_change_24h>=0?'+':'')+credAgent.price_change_24h.toFixed(1)+'%');
-        }
-        if(mover && mover.name) setTicker('tk-mover', mover.name + (mover.price_change_24h!=null ? ' ('+(mover.price_change_24h>=0?'+':'')+mover.price_change_24h.toFixed(1)+'%)' : ''));
-
-        // Duplicate ticker content for seamless loop after values are populated.
-        duplicateTickerContent();
-      }).catch(() => duplicateTickerContent());
-    })();
-
     // Carousel
     let carouselIdx = 0;
     let carouselCount = 0;
