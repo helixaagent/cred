@@ -771,6 +771,19 @@ async function fetchAgents() {
   }
 }
 
+function terminalAgentId(agent) {
+  return agent.agent_id || agent.token_id || agent.address || agent.token_address || agent.id || agent.name || '';
+}
+
+function terminalAgentProfileUrl(agent) {
+  const id = terminalAgentId(agent);
+  const helixaId = String(agent.token_id || agent.agent_id || '').match(/^helixa-(\d+)$/i);
+  if (helixaId) return `https://helixa.xyz/agent/${helixaId[1]}`;
+  if (agent.token_address && Number(agent.chain_id) === 8453) return `https://dexscreener.com/base/${agent.token_address}`;
+  if (id) return `${API}/api/terminal/agent/${encodeURIComponent(id)}`;
+  return 'https://cred.exchange';
+}
+
 function renderAgents(agents) {
   const body = document.getElementById('agents-body');
   if (!agents.length) {
@@ -779,17 +792,21 @@ function renderAgents(agents) {
   }
   body.innerHTML = agents.map(a => {
     const tc = tierClass(a.cred_tier);
+    const agentId = terminalAgentId(a);
+    const name = a.name ? escapeHtml(a.name) : '<span style="color:var(--muted)">unnamed</span>';
+    const tokenAddress = a.token_address ? escapeHtml(a.token_address) : '';
+    const tokenSymbol = a.token_symbol ? escapeHtml(a.token_symbol) : '';
     return `<tr>
       <td><span class="cred-score ${tc}">${a.cred_score || 0}</span></td>
-      <td><a href="https://helixa.xyz/agent.html?id=${a.token_id || a.agent_id || a.id || ''}" target="_blank" rel="noopener" style="color:var(--green);text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${a.name || '<span style="color:var(--muted)">unnamed</span>'}</a> ${a.chain_id === 900901 ? '<span class="chain-badge solana">SOL</span>' : '<span class="chain-badge base">BASE</span>'}</td>
-      <td><span class="tier-badge ${tc}">${(a.cred_tier || 'JUNK').replace('_',' ')}</span></td>
-      <td class="hide-mobile">${a.platform || '—'}</td>
-      <td>${a.token_symbol ? `<a href="https://dexscreener.com/base/${a.token_address}" target="_blank" style="color:var(--amber);text-decoration:none;font-weight:700" title="$${a.token_symbol}">$${a.token_symbol}</a>` : (a.x402_supported ? '<span class="x402-badge">x402</span>' : '')}</td>
+      <td><a href="#" class="agent-link" data-agent-id="${escapeHtml(agentId)}" style="color:var(--green);text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${name}</a> ${a.chain_id === 900901 ? '<span class="chain-badge solana">SOL</span>' : '<span class="chain-badge base">BASE</span>'}</td>
+      <td><span class="tier-badge ${tc}">${escapeHtml((a.cred_tier || 'JUNK').replace('_',' '))}</span></td>
+      <td class="hide-mobile">${escapeHtml(a.platform || '—')}</td>
+      <td>${tokenSymbol ? `<a href="https://dexscreener.com/base/${tokenAddress}" target="_blank" rel="noopener" style="color:var(--amber);text-decoration:none;font-weight:700" title="$${tokenSymbol}">$${tokenSymbol}</a>` : (a.x402_supported ? '<span class="x402-badge">x402</span>' : '')}</td>
       <td>${a.token_market_cap ? formatMcap(a.token_market_cap) : '—'}</td>
       <td style="color:${(a.price_change_24h||0) >= 0 ? '#6eecd8' : '#ff6b6b'};font-weight:700">${a.price_change_24h != null && a.token_symbol ? ((a.price_change_24h >= 0 ? '+' : '') + a.price_change_24h.toFixed(1) + '%') : '—'}</td>
       <!-- REV cell hidden -->
       <!-- <td class="hide-mobile">${formatRev(a)}</td> -->
-      <td class="hide-mobile"><span class="addr" title="${a.address || ''}">${shortAddr(a.address)}</span></td>
+      <td class="hide-mobile"><span class="addr" title="${escapeHtml(a.address || '')}">${shortAddr(a.address)}</span></td>
     </tr>`;
   }).join('');
 }
@@ -989,9 +1006,10 @@ async function submitAgentListing(event) {
   }
 }
 
-async function runCredReport() {
+async function runCredReport(queryOverride = null, options = {}) {
   const input = document.getElementById('search');
-  const query = input.value.trim();
+  const query = (queryOverride || input.value).trim();
+  if (queryOverride) input.value = query;
   const runId = activeReportRun + 1;
   activeReportRun = runId;
   openCredReportModal(query || 'NO INPUT');
@@ -1010,11 +1028,18 @@ async function runCredReport() {
     }
 
     await typeReportLine('SCANNING AGENT INDEX...', 18, '', runId);
-    const params = new URLSearchParams({ page: 1, limit: 5, sort: 'cred_score', dir: 'desc', q: query });
-    const fetchPromise = fetch(`${API}/api/terminal/agents?${params}`).then(async res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    });
+    const fetchPromise = options.singleAgent
+      ? fetch(`${API}/api/terminal/agent/${encodeURIComponent(query)}`).then(async res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return { agents: [await res.json()] };
+      })
+      : (() => {
+        const params = new URLSearchParams({ page: 1, limit: 5, sort: 'cred_score', dir: 'desc', q: query });
+        return fetch(`${API}/api/terminal/agents?${params}`).then(async res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        });
+      })();
 
     await sleepReport(500, runId);
     await typeReportLine('MATCHING INPUT AGAINST NAME / ADDRESS / ID...', 10, 'dim', runId);
@@ -1024,7 +1049,7 @@ async function runCredReport() {
     if (runId !== activeReportRun) throw new Error('REPORT_CANCELLED');
 
     const agents = data.agents || [];
-    const agent = findBestReportAgent(agents, query);
+    const agent = options.singleAgent ? agents[0] : findBestReportAgent(agents, query);
     if (!agent) throw new Error(`NO MATCH FOR "${query}"`);
 
     await sleepReport(500, runId);
@@ -1039,8 +1064,8 @@ async function runCredReport() {
     const change = agent.price_change_24h != null && agent.token_symbol
       ? `${agent.price_change_24h >= 0 ? '+' : ''}${Number(agent.price_change_24h).toFixed(1)}%`
       : '—';
-    const id = agent.token_id || agent.agent_id || agent.id || '';
-    const profileUrl = `https://helixa.xyz/agent.html?id=${encodeURIComponent(id)}`;
+    const id = terminalAgentId(agent);
+    const profileUrl = terminalAgentProfileUrl(agent);
     const lines = [
       'CRED.EXCHANGE AGENT REPORT',
       '────────────────────────────────────────',
@@ -1110,8 +1135,15 @@ function sortBy(col) {
 function prevPage() { if (currentPage > 1) { currentPage--; fetchAgents(); } }
 function nextPage() { if (currentPage < totalPages) { currentPage++; fetchAgents(); } }
 
+document.getElementById('agents-body').addEventListener('click', e => {
+  const link = e.target.closest('.agent-link');
+  if (!link) return;
+  e.preventDefault();
+  const agentId = link.dataset.agentId;
+  if (agentId) runCredReport(agentId, { singleAgent: true });
+});
 document.getElementById('search').addEventListener('keydown', e => { if (e.key === 'Enter') runCredReport(); });
-document.getElementById('search-btn').addEventListener('click', runCredReport);
+document.getElementById('search-btn').addEventListener('click', () => runCredReport());
 document.getElementById('report-close').addEventListener('click', closeCredReportModal);
 document.getElementById('cred-report-modal').addEventListener('click', e => { if (e.target.id === 'cred-report-modal') closeCredReportModal(); });
 document.getElementById('submit-agent-btn').addEventListener('click', openSubmitAgentModal);
