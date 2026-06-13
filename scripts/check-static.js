@@ -88,6 +88,13 @@ else {
   if (String(fallbackAxobotl.token_address || '').toLowerCase() !== '0x810affc8aadad2824c65e0a2c5ef96ef1de42ba3') fail(`fallback Axobotl row has wrong token address: ${fallbackAxobotl.token_address || 'empty'}`);
   if (fallbackAxobotl.token_symbol !== 'AXOBOTL') fail(`fallback Axobotl row has wrong token symbol: ${fallbackAxobotl.token_symbol || 'empty'}`);
 }
+const fallbackDrb = fallbackAgents.find(agent => String(agent.token_address || '').toLowerCase() === '0x3ec2156d4c0a9cbdab4a016633b7bcf6a8d68ea2');
+if (!fallbackDrb) fail('terminal/fallback.json missing DRB Bankr row');
+else {
+  if (fallbackDrb.name !== 'DebtReliefBot') fail(`fallback DRB row has wrong name: ${fallbackDrb.name}`);
+  if (fallbackDrb.platform !== 'bankr') fail(`fallback DRB row has wrong platform: ${fallbackDrb.platform || 'empty'}`);
+  if (fallbackDrb.token_symbol !== 'DRB') fail(`fallback DRB row has wrong token symbol: ${fallbackDrb.token_symbol || 'empty'}`);
+}
 const fallbackSibyl = fallbackAgents.find(agent => agent.name === 'SIBYL' && agent.agent_id === 'helixa-1037');
 if (!fallbackSibyl) fail('terminal/fallback.json missing SIBYL helixa-1037 row');
 else {

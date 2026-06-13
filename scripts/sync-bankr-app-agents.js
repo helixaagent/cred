@@ -7,6 +7,25 @@ const BACKUP_DIR = path.join(path.dirname(TERMINAL_DB), 'backups');
 const BANKR_PROFILES_URL = 'https://api.bankr.bot/agent-profiles?sort=marketCap&limit=100';
 const DEX_BATCH_SIZE = 30;
 const STRONG_PROVENANCE = new Set(['helixa', 'erc8004-direct', 'erc8004', '8004scan', 'openclaw', 'clawnch', 'virtuals', 'dxrg']);
+const CURATED_BANKR_PROFILES = [
+  {
+    id: 'curated-drb',
+    slug: 'drb',
+    projectName: 'DebtReliefBot',
+    description: 'DebtReliefBot ($DRB). Grok\'s first token launched on Base with help from Bankr.',
+    profileImageUrl: 'https://www.debtrelief.bot/drb-logo.png',
+    tokenAddress: '0x3ec2156d4c0a9cbdab4a016633b7bcf6a8d68ea2',
+    tokenChainId: 'base',
+    tokenSymbol: 'DRB',
+    tokenName: 'DebtReliefBot',
+    weeklyRevenueWeth: '0',
+    twitterUsername: null,
+    website: 'https://www.debtrelief.bot/',
+    productsCount: 0,
+    createdAt: '2026-02-28T06:14:02.000Z',
+    source: 'bankr-curated',
+  },
+];
 
 function fail(message) {
   console.error(`FAIL: ${message}`);
@@ -81,7 +100,11 @@ async function fetchBankrProfiles() {
   const profiles = (data.profiles || []).filter(profile => profile.tokenAddress);
   if (data.total < 50 || profiles.length < 50) fail(`Bankr app profile count unexpectedly low: total=${data.total}, tokenized=${profiles.length}`);
   const deduped = new Map();
-  for (const profile of profiles) deduped.set(normalizeAddress(profile.tokenAddress), profile);
+  for (const profile of profiles) deduped.set(normalizeAddress(profile.tokenAddress), { ...profile, source: profile.source || 'bankr-app' });
+  for (const profile of CURATED_BANKR_PROFILES) {
+    const token = normalizeAddress(profile.tokenAddress);
+    if (!deduped.has(token)) deduped.set(token, profile);
+  }
   return [...deduped.values()].sort((a, b) => Number(b.marketCapUsd || 0) - Number(a.marketCapUsd || 0));
 }
 
@@ -115,7 +138,7 @@ function backupDb() {
 
 function buildMetadata(profile) {
   return JSON.stringify({
-    source: 'bankr-app',
+    source: profile.source || 'bankr-app',
     bankrProfileId: profile.id || null,
     bankrSlug: profile.slug || null,
     twitterUsername: profile.twitterUsername || null,
@@ -128,7 +151,7 @@ function buildMetadata(profile) {
 
 function buildRevenueSources(profile) {
   return JSON.stringify({
-    source: 'bankr-app',
+    source: profile.source || 'bankr-app',
     weeklyRevenueWeth: profile.weeklyRevenueWeth || '0',
     productsCount: Number.isFinite(Number(profile.productsCount)) ? Number(profile.productsCount) : 0,
   });

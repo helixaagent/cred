@@ -69,9 +69,15 @@ async function getJson(label, pathOrUrl) {
     ['gitlawb', '0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3'],
     ['CRED canonical Helixa row', '0xab3f23c2abcb4e12cc8b593c218a7ba64ed17ba3'],
     ['Axobotl canonical Helixa row', '0x810affc8aadad2824c65e0a2c5ef96ef1de42ba3'],
+    ['DRB Bankr row', '0x3ec2156d4c0a9cbdab4a016633b7bcf6a8d68ea2'],
   ]) {
     assert(bankrFilterAddresses.has(address), `Bankr filter missing ${label}`);
   }
+
+  const drb = await getJson('DRB Bankr row', '/api/terminal/agent/0x3ec2156d4c0a9cbdab4a016633b7bcf6a8d68ea2');
+  assert(drb.name === 'DebtReliefBot', `expected DRB row name DebtReliefBot, got ${drb.name || 'empty'}`);
+  assert(drb.platform === 'bankr', `expected DRB platform bankr, got ${drb.platform || 'empty'}`);
+  assert(drb.token_symbol === 'DRB', `expected DRB token symbol, got ${drb.token_symbol || 'empty'}`);
 
   const cred = await getJson('CRED ticker row', '/api/terminal/agents?limit=1&q=Bendr');
   const credAgent = cred.agents && cred.agents[0];
