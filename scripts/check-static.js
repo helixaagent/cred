@@ -84,6 +84,14 @@ else {
   if (String(fallbackAxobotl.token_address || '').toLowerCase() !== '0x810affc8aadad2824c65e0a2c5ef96ef1de42ba3') fail(`fallback Axobotl row has wrong token address: ${fallbackAxobotl.token_address || 'empty'}`);
   if (fallbackAxobotl.token_symbol !== 'AXOBOTL') fail(`fallback Axobotl row has wrong token symbol: ${fallbackAxobotl.token_symbol || 'empty'}`);
 }
+const fallbackSibyl = fallbackAgents.find(agent => agent.name === 'SIBYL' && agent.agent_id === 'helixa-1037');
+if (!fallbackSibyl) fail('terminal/fallback.json missing SIBYL helixa-1037 row');
+else {
+  if (fallbackSibyl.cred_score !== 65) fail(`fallback SIBYL row has wrong CRED score: ${fallbackSibyl.cred_score}`);
+  if (fallbackSibyl.cred_tier !== 'QUALIFIED') fail(`fallback SIBYL row has wrong tier: ${fallbackSibyl.cred_tier}`);
+  if (String(fallbackSibyl.token_address || '').toLowerCase() !== '0x797f214a2cd64a4963a91fa21c8c55ec3eba4714') fail(`fallback SIBYL row has wrong token address: ${fallbackSibyl.token_address || 'empty'}`);
+  if (fallbackSibyl.token_symbol !== 'SIBYL') fail(`fallback SIBYL row has wrong token symbol: ${fallbackSibyl.token_symbol || 'empty'}`);
+}
 
 for (const forbidden of [
   'onclick="setChain',

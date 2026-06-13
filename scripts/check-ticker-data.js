@@ -79,6 +79,20 @@ async function getJson(label, path) {
   assert(axobotlByToken.agent_id === 'helixa-1069', `expected token lookup agent_id helixa-1069, got ${axobotlByToken.agent_id || 'empty'}`);
   assert(axobotlByToken.token_symbol === 'AXOBOTL', `expected token lookup token_symbol AXOBOTL, got ${axobotlByToken.token_symbol || 'empty'}`);
 
+  const sibylByName = await getJson('SIBYL terminal row', '/api/terminal/agents?limit=10&q=Sibyl');
+  const sibylNameMatch = (sibylByName.agents || []).find(agent => agent.name === 'SIBYL' && agent.agent_id === 'helixa-1037');
+  assert(sibylNameMatch, 'SIBYL missing from terminal search by name');
+  assert(sibylNameMatch.cred_score === 65, `expected SIBYL CRED score 65, got ${sibylNameMatch.cred_score}`);
+  assert(sibylNameMatch.cred_tier === 'QUALIFIED', `expected SIBYL tier QUALIFIED, got ${sibylNameMatch.cred_tier || 'empty'}`);
+  assert(sibylNameMatch.token_address?.toLowerCase() === '0x797f214a2cd64a4963a91fa21c8c55ec3eba4714', `expected SIBYL token address 0x797f..., got ${sibylNameMatch.token_address || 'empty'}`);
+  assert(sibylNameMatch.token_symbol === 'SIBYL', `expected SIBYL token_symbol SIBYL, got ${sibylNameMatch.token_symbol || 'empty'}`);
+  assert(sibylNameMatch.token_market_cap > 0, 'SIBYL missing market cap');
+
+  const sibylByToken = await getJson('SIBYL token lookup', '/api/terminal/agent/0x797f214a2CD64a4963A91Fa21c8C55Ec3EBa4714');
+  assert(sibylByToken.name === 'SIBYL', `expected token lookup to return SIBYL, got ${sibylByToken.name || 'empty'}`);
+  assert(sibylByToken.agent_id === 'helixa-1037', `expected token lookup agent_id helixa-1037, got ${sibylByToken.agent_id || 'empty'}`);
+  assert(sibylByToken.token_symbol === 'SIBYL', `expected token lookup token_symbol SIBYL, got ${sibylByToken.token_symbol || 'empty'}`);
+
   for (const [label, path, expected] of [
     ['Helixa token 0 restored lookup', '/api/terminal/agent/helixa-0', { name: 'E2ETest', agent_id: 'helixa-0' }],
     ['Helixa historical restored lookup', '/api/terminal/agent/helixa-1764', { name: 'JKILLR', agent_id: 'helixa-1764' }],
