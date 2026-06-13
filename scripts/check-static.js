@@ -68,12 +68,14 @@ try {
 }
 
 const fallbackAgents = Array.isArray(fallbackData.agents) ? fallbackData.agents : [];
-const fallbackAldo = fallbackAgents.find(agent => String(agent.token_address || '').toLowerCase() === '0x511ef9ad5e645e533d15df605b4628e3d0d0ff53');
-if (!fallbackAldo) fail('terminal/fallback.json missing Aldo VU');
+const fallbackVu = fallbackAgents.find(agent => String(agent.token_address || '').toLowerCase() === '0x511ef9ad5e645e533d15df605b4628e3d0d0ff53');
+if (!fallbackVu) fail('terminal/fallback.json missing VU token row');
 else {
-  if (fallbackAldo.name !== 'Aldo VU') fail(`fallback Aldo row has wrong name: ${fallbackAldo.name}`);
-  if (fallbackAldo.token_symbol !== 'VU') fail(`fallback Aldo row has wrong token symbol: ${fallbackAldo.token_symbol}`);
+  if (fallbackVu.name !== 'VU') fail(`fallback VU row has wrong name: ${fallbackVu.name}`);
+  if (fallbackVu.agent_id !== 'helixa-1127') fail(`fallback VU row has wrong agent_id: ${fallbackVu.agent_id}`);
+  if (fallbackVu.token_symbol !== 'VU') fail(`fallback VU row has wrong token symbol: ${fallbackVu.token_symbol}`);
 }
+if (fallbackAgents.some(agent => agent.name === 'Aldo VU')) fail('terminal/fallback.json still contains mistaken Aldo VU row');
 
 for (const forbidden of [
   'onclick="setChain',

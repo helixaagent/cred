@@ -47,15 +47,17 @@ async function getJson(label, path) {
   assert(moverAgent && moverAgent.name, 'top mover ticker row missing agent name');
   assert(typeof moverAgent.price_change_24h === 'number', 'top mover ticker row missing 24h price change');
 
-  const aldoByName = await getJson('Aldo VU terminal row', '/api/terminal/agents?limit=3&q=Aldo%20VU');
-  const aldoNameMatch = (aldoByName.agents || []).find(agent => agent.token_address?.toLowerCase() === '0x511ef9ad5e645e533d15df605b4628e3d0d0ff53');
-  assert(aldoNameMatch, 'Aldo VU missing from terminal search by name');
-  assert(aldoNameMatch.token_symbol === 'VU', `expected Aldo VU token_symbol VU, got ${aldoNameMatch.token_symbol || 'empty'}`);
-  assert(aldoNameMatch.token_market_cap > 0, 'Aldo VU missing market cap');
+  const vuByName = await getJson('VU terminal row', '/api/terminal/agents?limit=10&q=VU');
+  const vuNameMatch = (vuByName.agents || []).find(agent => agent.name === 'VU' && agent.agent_id === 'helixa-1127');
+  assert(vuNameMatch, 'VU missing from terminal search by name');
+  assert(vuNameMatch.token_address?.toLowerCase() === '0x511ef9ad5e645e533d15df605b4628e3d0d0ff53', `expected VU token address 0x511e..., got ${vuNameMatch.token_address || 'empty'}`);
+  assert(vuNameMatch.token_symbol === 'VU', `expected VU token_symbol VU, got ${vuNameMatch.token_symbol || 'empty'}`);
+  assert(vuNameMatch.token_market_cap > 0, 'VU missing market cap');
 
-  const aldoByToken = await getJson('Aldo VU token lookup', '/api/terminal/agent/0x511ef9Ad5E645E533D15DF605B4628e3D0d0Ff53');
-  assert(aldoByToken.name === 'Aldo VU', `expected token lookup to return Aldo VU, got ${aldoByToken.name || 'empty'}`);
-  assert(aldoByToken.token_symbol === 'VU', `expected token lookup token_symbol VU, got ${aldoByToken.token_symbol || 'empty'}`);
+  const vuByToken = await getJson('VU token lookup', '/api/terminal/agent/0x511ef9Ad5E645E533D15DF605B4628e3D0d0Ff53');
+  assert(vuByToken.name === 'VU', `expected token lookup to return VU, got ${vuByToken.name || 'empty'}`);
+  assert(vuByToken.agent_id === 'helixa-1127', `expected token lookup agent_id helixa-1127, got ${vuByToken.agent_id || 'empty'}`);
+  assert(vuByToken.token_symbol === 'VU', `expected token lookup token_symbol VU, got ${vuByToken.token_symbol || 'empty'}`);
 
   console.log('Ticker data checks passed');
 })().catch(error => fail(error.stack || error.message));
