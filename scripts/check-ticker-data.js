@@ -59,5 +59,16 @@ async function getJson(label, path) {
   assert(vuByToken.agent_id === 'helixa-1127', `expected token lookup agent_id helixa-1127, got ${vuByToken.agent_id || 'empty'}`);
   assert(vuByToken.token_symbol === 'VU', `expected token lookup token_symbol VU, got ${vuByToken.token_symbol || 'empty'}`);
 
+  const axobotlByName = await getJson('Axobotl terminal row', '/api/terminal/agents?limit=10&q=Axobotl');
+  const axobotlNameMatch = (axobotlByName.agents || []).find(agent => agent.name === 'Axobotl' && agent.agent_id === 'helixa-1069');
+  assert(axobotlNameMatch, 'Axobotl missing from terminal search by name');
+  assert(axobotlNameMatch.cred_score === 85, `expected Axobotl CRED score 85, got ${axobotlNameMatch.cred_score}`);
+  assert(axobotlNameMatch.cred_tier === 'PRIME', `expected Axobotl tier PRIME, got ${axobotlNameMatch.cred_tier || 'empty'}`);
+
+  const axobotlByExactName = await getJson('Axobotl exact lookup', '/api/terminal/agent/Axobotl');
+  assert(axobotlByExactName.name === 'Axobotl', `expected exact lookup to return Axobotl, got ${axobotlByExactName.name || 'empty'}`);
+  assert(axobotlByExactName.agent_id === 'helixa-1069', `expected exact lookup agent_id helixa-1069, got ${axobotlByExactName.agent_id || 'empty'}`);
+  assert(axobotlByExactName.cred_score === 85, `expected exact lookup Axobotl CRED score 85, got ${axobotlByExactName.cred_score}`);
+
   console.log('Ticker data checks passed');
 })().catch(error => fail(error.stack || error.message));

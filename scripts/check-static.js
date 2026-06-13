@@ -76,6 +76,12 @@ else {
   if (fallbackVu.token_symbol !== 'VU') fail(`fallback VU row has wrong token symbol: ${fallbackVu.token_symbol}`);
 }
 if (fallbackAgents.some(agent => agent.name === 'Aldo VU')) fail('terminal/fallback.json still contains mistaken Aldo VU row');
+const fallbackAxobotl = fallbackAgents.find(agent => agent.name === 'Axobotl' && agent.agent_id === 'helixa-1069');
+if (!fallbackAxobotl) fail('terminal/fallback.json missing Axobotl helixa-1069 row');
+else {
+  if (fallbackAxobotl.cred_score !== 85) fail(`fallback Axobotl row has wrong CRED score: ${fallbackAxobotl.cred_score}`);
+  if (fallbackAxobotl.cred_tier !== 'PRIME') fail(`fallback Axobotl row has wrong tier: ${fallbackAxobotl.cred_tier}`);
+}
 
 for (const forbidden of [
   'onclick="setChain',
