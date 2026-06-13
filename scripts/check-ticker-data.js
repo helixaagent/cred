@@ -79,5 +79,16 @@ async function getJson(label, path) {
   assert(axobotlByToken.agent_id === 'helixa-1069', `expected token lookup agent_id helixa-1069, got ${axobotlByToken.agent_id || 'empty'}`);
   assert(axobotlByToken.token_symbol === 'AXOBOTL', `expected token lookup token_symbol AXOBOTL, got ${axobotlByToken.token_symbol || 'empty'}`);
 
+  for (const [label, path, expected] of [
+    ['Helixa token 0 restored lookup', '/api/terminal/agent/helixa-0', { name: 'E2ETest', agent_id: 'helixa-0' }],
+    ['Helixa historical restored lookup', '/api/terminal/agent/helixa-1764', { name: 'JKILLR', agent_id: 'helixa-1764' }],
+    ['Helixa shared-wallet restored lookup', '/api/terminal/agent/helixa-2079', { name: 'd1mka17Agent', agent_id: 'helixa-2079' }],
+  ]) {
+    const restored = await getJson(label, path);
+    assert(restored.name === expected.name, `${label}: expected ${expected.name}, got ${restored.name || 'empty'}`);
+    assert(restored.agent_id === expected.agent_id, `${label}: expected ${expected.agent_id}, got ${restored.agent_id || 'empty'}`);
+    assert(restored.platform === 'helixa', `${label}: expected platform helixa, got ${restored.platform || 'empty'}`);
+  }
+
   console.log('Ticker data checks passed');
 })().catch(error => fail(error.stack || error.message));
