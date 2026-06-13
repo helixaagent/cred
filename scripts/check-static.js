@@ -81,6 +81,8 @@ if (!fallbackAxobotl) fail('terminal/fallback.json missing Axobotl helixa-1069 r
 else {
   if (fallbackAxobotl.cred_score !== 85) fail(`fallback Axobotl row has wrong CRED score: ${fallbackAxobotl.cred_score}`);
   if (fallbackAxobotl.cred_tier !== 'PRIME') fail(`fallback Axobotl row has wrong tier: ${fallbackAxobotl.cred_tier}`);
+  if (String(fallbackAxobotl.token_address || '').toLowerCase() !== '0x810affc8aadad2824c65e0a2c5ef96ef1de42ba3') fail(`fallback Axobotl row has wrong token address: ${fallbackAxobotl.token_address || 'empty'}`);
+  if (fallbackAxobotl.token_symbol !== 'AXOBOTL') fail(`fallback Axobotl row has wrong token symbol: ${fallbackAxobotl.token_symbol || 'empty'}`);
 }
 
 for (const forbidden of [

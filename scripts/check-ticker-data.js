@@ -64,11 +64,20 @@ async function getJson(label, path) {
   assert(axobotlNameMatch, 'Axobotl missing from terminal search by name');
   assert(axobotlNameMatch.cred_score === 85, `expected Axobotl CRED score 85, got ${axobotlNameMatch.cred_score}`);
   assert(axobotlNameMatch.cred_tier === 'PRIME', `expected Axobotl tier PRIME, got ${axobotlNameMatch.cred_tier || 'empty'}`);
+  assert(axobotlNameMatch.token_address?.toLowerCase() === '0x810affc8aadad2824c65e0a2c5ef96ef1de42ba3', `expected Axobotl token address 0x810a..., got ${axobotlNameMatch.token_address || 'empty'}`);
+  assert(axobotlNameMatch.token_symbol === 'AXOBOTL', `expected Axobotl token_symbol AXOBOTL, got ${axobotlNameMatch.token_symbol || 'empty'}`);
+  assert(axobotlNameMatch.token_market_cap > 0, 'Axobotl missing market cap');
 
   const axobotlByExactName = await getJson('Axobotl exact lookup', '/api/terminal/agent/Axobotl');
   assert(axobotlByExactName.name === 'Axobotl', `expected exact lookup to return Axobotl, got ${axobotlByExactName.name || 'empty'}`);
   assert(axobotlByExactName.agent_id === 'helixa-1069', `expected exact lookup agent_id helixa-1069, got ${axobotlByExactName.agent_id || 'empty'}`);
   assert(axobotlByExactName.cred_score === 85, `expected exact lookup Axobotl CRED score 85, got ${axobotlByExactName.cred_score}`);
+  assert(axobotlByExactName.token_symbol === 'AXOBOTL', `expected exact lookup Axobotl token_symbol AXOBOTL, got ${axobotlByExactName.token_symbol || 'empty'}`);
+
+  const axobotlByToken = await getJson('Axobotl token lookup', '/api/terminal/agent/0x810aFFc8AAdAD2824C65E0A2C5Ef96eF1De42ba3');
+  assert(axobotlByToken.name === 'Axobotl', `expected token lookup to return Axobotl, got ${axobotlByToken.name || 'empty'}`);
+  assert(axobotlByToken.agent_id === 'helixa-1069', `expected token lookup agent_id helixa-1069, got ${axobotlByToken.agent_id || 'empty'}`);
+  assert(axobotlByToken.token_symbol === 'AXOBOTL', `expected token lookup token_symbol AXOBOTL, got ${axobotlByToken.token_symbol || 'empty'}`);
 
   console.log('Ticker data checks passed');
 })().catch(error => fail(error.stack || error.message));
