@@ -62,6 +62,17 @@ async function getJson(label, pathOrUrl) {
     );
   }
 
+  const bankrFilter = await getJson('Bankr filter rows', '/api/terminal/agents?limit=100&filter=bankr&sort=token_market_cap&dir=desc');
+  assert(bankrFilter.total >= 59, `Bankr filter returned too few rows: ${bankrFilter.total}`);
+  const bankrFilterAddresses = new Set((bankrFilter.agents || []).map(agent => String(agent.token_address || '').toLowerCase()));
+  for (const [label, address] of [
+    ['gitlawb', '0x5f980dcfc4c0fa3911554cf5ab288ed0eb13dba3'],
+    ['CRED canonical Helixa row', '0xab3f23c2abcb4e12cc8b593c218a7ba64ed17ba3'],
+    ['Axobotl canonical Helixa row', '0x810affc8aadad2824c65e0a2c5ef96ef1de42ba3'],
+  ]) {
+    assert(bankrFilterAddresses.has(address), `Bankr filter missing ${label}`);
+  }
+
   const cred = await getJson('CRED ticker row', '/api/terminal/agents?limit=1&q=Bendr');
   const credAgent = cred.agents && cred.agents[0];
   assert(credAgent, 'CRED ticker row missing Bendr agent');

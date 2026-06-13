@@ -625,6 +625,7 @@
     <button type="button" class="filter-btn" data-tier="QUALIFIED">QUALIFIED</button>
     <button type="button" class="filter-btn" data-tier="MARGINAL">MARGINAL</button>
     <button type="button" class="filter-btn" data-tier="JUNK">JUNK</button>
+    <button type="button" class="filter-btn" data-tier="bankr">BANKR</button>
     <button type="button" class="filter-btn" data-tier="x402">x402 ✓</button>
   </div>
   
@@ -773,9 +774,15 @@ async function fetchAgents() {
 }
 
 function filterFallbackAgents(agents) {
+  const filtered = agents.filter(agent => {
+    if (currentFilter === 'bankr') return agent.platform === 'bankr' || String(agent.metadata || '').includes('\"source\":\"bankr-app\"');
+    if (currentFilter === 'x402') return Number(agent.x402_supported) === 1;
+    if (['PREFERRED', 'PRIME', 'QUALIFIED', 'MARGINAL', 'JUNK'].includes(currentFilter)) return agent.cred_tier === currentFilter;
+    return true;
+  });
   const needle = String(currentSearch || '').trim().toLowerCase();
-  if (!needle) return agents;
-  return agents.filter(agent => [
+  if (!needle) return filtered;
+  return filtered.filter(agent => [
     agent.name,
     agent.address,
     agent.agent_id,
