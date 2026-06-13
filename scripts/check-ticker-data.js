@@ -28,11 +28,20 @@ async function getJson(label, path) {
   assert(terminal.agents.length === 1, 'terminal stats response should include one agent');
   assert(terminal.stats && typeof terminal.stats === 'object', 'terminal stats response missing stats object');
   assert(terminal.stats.total > 0, 'ticker missing total agents');
+  assert(terminal.stats.total >= 180000, `terminal corpus shrank below restored baseline: expected >= 180000 agents, got ${terminal.stats.total}`);
   assert(terminal.stats.scored > 0, 'ticker missing scored agents');
   assert(Number.isFinite(Number(terminal.stats.avgScore)), 'ticker missing average CRED score');
   assert(terminal.stats.x402 > 0, 'ticker missing x402 count');
   assert(terminal.stats.base > 0, 'ticker missing Base agent count');
   assert(terminal.stats.solana > 0, 'ticker missing Solana agent count');
+
+  for (const [label, path, minimum] of [
+    ['ETH ERC-8004 corpus', '/api/terminal/agents?limit=1&chain=eth', 49000],
+    ['BSC ERC-8004 corpus', '/api/terminal/agents?limit=1&chain=bsc', 33000],
+  ]) {
+    const chain = await getJson(label, path);
+    assert(chain.total >= minimum, `${label} shrank below restored baseline: expected >= ${minimum}, got ${chain.total}`);
+  }
 
   const cred = await getJson('CRED ticker row', '/api/terminal/agents?limit=1&q=Bendr');
   const credAgent = cred.agents && cred.agents[0];

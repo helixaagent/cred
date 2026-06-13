@@ -67,6 +67,8 @@ try {
   fail(`terminal/fallback.json is invalid JSON: ${error.message}`);
 }
 
+if (fallbackData.total < 195000) fail(`terminal/fallback.json total shrank below restored baseline: ${fallbackData.total}`);
+if ((fallbackData.stats?.total || 0) < 195000) fail(`terminal/fallback.json stats.total shrank below restored baseline: ${fallbackData.stats?.total}`);
 const fallbackAgents = Array.isArray(fallbackData.agents) ? fallbackData.agents : [];
 const fallbackVu = fallbackAgents.find(agent => String(agent.token_address || '').toLowerCase() === '0x511ef9ad5e645e533d15df605b4628e3d0d0ff53');
 if (!fallbackVu) fail('terminal/fallback.json missing VU token row');
