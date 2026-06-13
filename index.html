@@ -753,9 +753,10 @@ async function fetchAgents() {
       const fb = await fetch('/terminal/fallback.json');
       if (fb.ok) {
         const data = await fb.json();
-        renderAgents(data.agents || []);
-        totalPages = data.totalPages || 1;
-        document.getElementById('page-info').textContent = `PAGE 1 / ${totalPages} (CACHED)`;
+        const fallbackAgents = filterFallbackAgents(data.agents || []);
+        renderAgents(fallbackAgents.slice(0, PER_PAGE));
+        totalPages = currentSearch ? Math.max(1, Math.ceil(fallbackAgents.length / PER_PAGE)) : (data.totalPages || 1);
+        document.getElementById('page-info').textContent = `PAGE 1 / ${totalPages} (CACHED${currentSearch ? ' SEARCH' : ''})`;
         if (data.stats) {
           const sv2 = (hid,tid,v) => { const h=document.getElementById(hid); const t=document.getElementById(tid); if(h) h.textContent=v; if(t) t.textContent=v; };
           sv2('total-agents','tk-agents',(data.stats.total||0).toLocaleString());
@@ -769,6 +770,20 @@ async function fetchAgents() {
     body.innerHTML = `<tr><td colspan="8" style="color:var(--red);padding:20px">ERROR: ${err.message}<br><br><span style="color:var(--muted)">Try opening in Chrome/Safari. Some browsers block cross-origin API requests.</span></td></tr>`;
     loadDemoStats();
   }
+}
+
+function filterFallbackAgents(agents) {
+  const needle = String(currentSearch || '').trim().toLowerCase();
+  if (!needle) return agents;
+  return agents.filter(agent => [
+    agent.name,
+    agent.address,
+    agent.agent_id,
+    agent.token_id,
+    agent.token_address,
+    agent.token_symbol,
+    agent.token_name,
+  ].filter(Boolean).some(value => String(value).toLowerCase().includes(needle)));
 }
 
 function terminalAgentId(agent) {
@@ -1010,6 +1025,7 @@ async function runCredReport(queryOverride = null, options = {}) {
   const input = document.getElementById('search');
   const query = (queryOverride || input.value).trim();
   if (queryOverride) input.value = query;
+  if (!options.singleAgent) { currentSearch = query; currentPage = 1; fetchAgents(); }
   const runId = activeReportRun + 1;
   activeReportRun = runId;
   openCredReportModal(query || 'NO INPUT');

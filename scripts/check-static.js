@@ -32,12 +32,14 @@ for (const expected of [
   'id="cred-report-modal"',
   'function openCredReportModal',
   'async function runCredReport',
+  "if (!options.singleAgent) { currentSearch = query; currentPage = 1; fetchAgents(); }",
   'async function typeReportLine',
   'function showReportCursor',
   'report-cursor',
   'SCANNING AGENT INDEX',
   'CALCULATING CRED SIGNALS',
   'function findBestReportAgent',
+  'function filterFallbackAgents',
   'MATCHING INPUT AGAINST NAME / ADDRESS / ID...',
   'id="submit-agent-btn"',
   'SUBMIT AGENT',
@@ -58,10 +60,19 @@ for (const forbidden of [
   if (html.includes(forbidden)) fail(`index.html still contains ${forbidden}`);
 }
 
+let fallbackData;
 try {
-  JSON.parse(fallback);
+  fallbackData = JSON.parse(fallback);
 } catch (error) {
   fail(`terminal/fallback.json is invalid JSON: ${error.message}`);
+}
+
+const fallbackAgents = Array.isArray(fallbackData.agents) ? fallbackData.agents : [];
+const fallbackAldo = fallbackAgents.find(agent => String(agent.token_address || '').toLowerCase() === '0x511ef9ad5e645e533d15df605b4628e3d0d0ff53');
+if (!fallbackAldo) fail('terminal/fallback.json missing Aldo VU');
+else {
+  if (fallbackAldo.name !== 'Aldo VU') fail(`fallback Aldo row has wrong name: ${fallbackAldo.name}`);
+  if (fallbackAldo.token_symbol !== 'VU') fail(`fallback Aldo row has wrong token symbol: ${fallbackAldo.token_symbol}`);
 }
 
 for (const forbidden of [
