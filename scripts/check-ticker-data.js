@@ -9,8 +9,9 @@ function assert(condition, message) {
   if (!condition) fail(message);
 }
 
-async function getJson(label, path) {
-  const res = await fetch(`${API}${path}`, { headers: { accept: 'application/json' } });
+async function getJson(label, pathOrUrl) {
+  const url = pathOrUrl.startsWith('http') ? pathOrUrl : `${API}${pathOrUrl}`;
+  const res = await fetch(url, { headers: { accept: 'application/json' } });
   const text = await res.text();
   let data;
   try {
@@ -41,6 +42,24 @@ async function getJson(label, path) {
   ]) {
     const chain = await getJson(label, path);
     assert(chain.total >= minimum, `${label} shrank below restored baseline: expected >= ${minimum}, got ${chain.total}`);
+  }
+
+  const bankrProfiles = await getJson('Bankr app profiles', 'https://api.bankr.bot/agent-profiles?sort=marketCap&limit=100');
+  const bankrTokenProfiles = (bankrProfiles.profiles || []).filter(profile => profile.tokenAddress);
+  assert(bankrProfiles.total >= 50, `Bankr app profile count unexpectedly low: ${bankrProfiles.total || 0}`);
+  assert(bankrTokenProfiles.length >= 50, `Bankr app tokenized profile count unexpectedly low: ${bankrTokenProfiles.length}`);
+  const bankrProfileBySlug = new Map(bankrTokenProfiles.map(profile => [profile.slug, profile]));
+  for (const slug of ['gitlawb', 'aeon', 'nookplot', 'perkos', 'teligent', 'agent-remilia', 'helixa', 'axobotl']) {
+    const profile = bankrProfileBySlug.get(slug);
+    assert(profile, `Bankr app profile list missing expected slug ${slug}`);
+    const terminalProfile = await getJson(
+      `Bankr app profile ${profile.projectName || profile.slug || profile.tokenSymbol}`,
+      `/api/terminal/agent/${profile.tokenAddress}`
+    );
+    assert(
+      terminalProfile.token_address?.toLowerCase() === profile.tokenAddress.toLowerCase(),
+      `Bankr app profile ${profile.projectName || profile.slug || profile.tokenSymbol}: token lookup returned ${terminalProfile.token_address || 'empty'}`
+    );
   }
 
   const cred = await getJson('CRED ticker row', '/api/terminal/agents?limit=1&q=Bendr');
