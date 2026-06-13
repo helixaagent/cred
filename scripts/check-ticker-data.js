@@ -56,6 +56,20 @@ async function getJson(label, path) {
   assert(moverAgent && moverAgent.name, 'top mover ticker row missing agent name');
   assert(typeof moverAgent.price_change_24h === 'number', 'top mover ticker row missing 24h price change');
 
+  for (const [label, dir, ordered] of [
+    ['24H descending sort', 'desc', (prev, next) => prev >= next],
+    ['24H ascending sort', 'asc', (prev, next) => prev <= next],
+  ]) {
+    const sorted = await getJson(label, `/api/terminal/agents?limit=12&sort=price_change_24h&dir=${dir}`);
+    const changes = (sorted.agents || [])
+      .map(agent => agent.price_change_24h)
+      .filter(value => typeof value === 'number');
+    assert(changes.length >= 8, `${label}: expected at least 8 rows with 24H data, got ${changes.length}`);
+    for (let i = 1; i < changes.length; i++) {
+      assert(ordered(changes[i - 1], changes[i]), `${label}: row ${i + 1} is out of order (${changes[i - 1]} then ${changes[i]})`);
+    }
+  }
+
   const vuByName = await getJson('VU terminal row', '/api/terminal/agents?limit=10&q=VU');
   const vuNameMatch = (vuByName.agents || []).find(agent => agent.name === 'VU' && agent.agent_id === 'helixa-1127');
   assert(vuNameMatch, 'VU missing from terminal search by name');
