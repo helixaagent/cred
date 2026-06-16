@@ -103,6 +103,15 @@ else {
   if (String(fallbackSibyl.token_address || '').toLowerCase() !== '0x797f214a2cd64a4963a91fa21c8c55ec3eba4714') fail(`fallback SIBYL row has wrong token address: ${fallbackSibyl.token_address || 'empty'}`);
   if (fallbackSibyl.token_symbol !== 'SIBYL') fail(`fallback SIBYL row has wrong token symbol: ${fallbackSibyl.token_symbol || 'empty'}`);
 }
+const fallbackMfergpt = fallbackAgents.find(agent => agent.name === 'mferGPT' && (agent.agent_id === 'helixa-73' || agent.token_id === 'helixa-73'));
+if (!fallbackMfergpt) fail('terminal/fallback.json missing mferGPT helixa-73 row');
+else {
+  if (String(fallbackMfergpt.token_address || '').toLowerCase() !== '0x4160efdd66521483c22cb98b57b87d1fdafeab07') fail(`fallback mferGPT row has wrong token address: ${fallbackMfergpt.token_address || 'empty'}`);
+  if (fallbackMfergpt.token_symbol !== 'MFERGPT') fail(`fallback mferGPT row has wrong token symbol: ${fallbackMfergpt.token_symbol || 'empty'}`);
+}
+if (fallbackAgents.some(agent => agent.name === 'mferGPT' && String(agent.token_address || '').toLowerCase() === '0x5c76bf1cf910aea617d732b5f39439240325eec8')) {
+  fail('terminal/fallback.json still contains fake mferGPT token row');
+}
 
 for (const forbidden of [
   'onclick="setChain',

@@ -152,6 +152,23 @@ async function getJson(label, pathOrUrl) {
   assert(sibylByToken.agent_id === 'helixa-1037', `expected token lookup agent_id helixa-1037, got ${sibylByToken.agent_id || 'empty'}`);
   assert(sibylByToken.token_symbol === 'SIBYL', `expected token lookup token_symbol SIBYL, got ${sibylByToken.token_symbol || 'empty'}`);
 
+  const mfergptByName = await getJson('mferGPT terminal row', '/api/terminal/agents?limit=10&q=mfergpt');
+  const mfergptNameMatch = (mfergptByName.agents || []).find(agent => agent.name === 'mferGPT' && agent.agent_id === 'helixa-73');
+  assert(mfergptNameMatch, 'mferGPT missing from terminal search by name');
+  assert(mfergptNameMatch.token_address?.toLowerCase() === '0x4160efdd66521483c22cb98b57b87d1fdafeab07', `expected mferGPT token address 0x4160..., got ${mfergptNameMatch.token_address || 'empty'}`);
+  assert(mfergptNameMatch.token_symbol === 'MFERGPT', `expected mferGPT token_symbol MFERGPT, got ${mfergptNameMatch.token_symbol || 'empty'}`);
+  assert(!((mfergptByName.agents || []).some(agent => agent.name === 'mferGPT' && agent.token_address?.toLowerCase() === '0x5c76bf1cf910aea617d732b5f39439240325eec8')), 'mferGPT search still returns fake token address 0x5c76...');
+
+  const mfergptByExactName = await getJson('mferGPT exact lookup', '/api/terminal/agent/mfergpt');
+  assert(mfergptByExactName.name === 'mferGPT', `expected exact lookup to return mferGPT, got ${mfergptByExactName.name || 'empty'}`);
+  assert(mfergptByExactName.agent_id === 'helixa-73', `expected exact lookup agent_id helixa-73, got ${mfergptByExactName.agent_id || 'empty'}`);
+  assert(mfergptByExactName.token_address?.toLowerCase() === '0x4160efdd66521483c22cb98b57b87d1fdafeab07', `expected exact lookup mferGPT token address 0x4160..., got ${mfergptByExactName.token_address || 'empty'}`);
+  assert(mfergptByExactName.token_symbol === 'MFERGPT', `expected exact lookup mferGPT token_symbol MFERGPT, got ${mfergptByExactName.token_symbol || 'empty'}`);
+
+  const mfergptByToken = await getJson('mferGPT token lookup', '/api/terminal/agent/0x4160efDd66521483c22Cb98b57b87d1fDAfeaB07');
+  assert(mfergptByToken.name === 'mferGPT', `expected token lookup to return mferGPT, got ${mfergptByToken.name || 'empty'}`);
+  assert(mfergptByToken.token_symbol === 'MFERGPT', `expected token lookup token_symbol MFERGPT, got ${mfergptByToken.token_symbol || 'empty'}`);
+
   for (const [label, path, expected] of [
     ['Helixa token 0 restored lookup', '/api/terminal/agent/helixa-0', { name: 'E2ETest', agent_id: 'helixa-0' }],
     ['Helixa historical restored lookup', '/api/terminal/agent/helixa-1764', { name: 'JKILLR', agent_id: 'helixa-1764' }],

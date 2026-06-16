@@ -26,6 +26,10 @@ const CURATED_BANKR_PROFILES = [
     source: 'bankr-curated',
   },
 ];
+const CANONICAL_BANKR_PROFILE_MATCHES = new Map([
+  // The Helixa agent is the canonical CRED row; Bankr is the authoritative token source.
+  ['mfergpt', { agentId: 'helixa-73' }],
+]);
 
 function fail(message) {
   console.error(`FAIL: ${message}`);
@@ -57,6 +61,10 @@ function slugify(value) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'unknown';
+}
+
+function canonicalBankrProfileMatch(profile) {
+  return CANONICAL_BANKR_PROFILE_MATCHES.get(slugify(profile.slug || profile.projectName || profile.tokenSymbol));
 }
 
 function betterDexPair(current, candidate) {
@@ -170,6 +178,10 @@ function assertAllProfilesPresent(db, profiles) {
 function syncProfiles(db, profiles, markets) {
   const now = Math.floor(Date.now() / 1000);
   const byToken = db.prepare('SELECT * FROM agents WHERE lower(token_address) = ? ORDER BY id ASC');
+  const canonicalByAgent = db.prepare(`SELECT * FROM agents
+    WHERE lower(agent_id) = @agent_id OR lower(token_id) = @agent_id
+    ORDER BY CASE WHEN platform = 'helixa' THEN 0 WHEN platform = 'bankr' THEN 2 ELSE 1 END, cred_score DESC
+    LIMIT 1`);
   const insert = db.prepare(`INSERT INTO agents (
     address, agent_id, token_id, chain_id, name, description, image_url, metadata, platform,
     x402_supported, cred_score, cred_tier, verified, is_verified, created_at, registered_at,
@@ -202,6 +214,24 @@ function syncProfiles(db, profiles, markets) {
     revenue_updated_at = @revenue_updated_at,
     market_enriched_at = @market_enriched_at
     WHERE id = @id`);
+  const updateCanonicalToken = db.prepare(`UPDATE agents SET
+    description = COALESCE(description, @description),
+    image_url = COALESCE(image_url, @image_url),
+    metadata = @metadata,
+    token_address = @token_address,
+    token_symbol = @token_symbol,
+    token_name = @token_name,
+    token_market_cap = @token_market_cap,
+    price_change_24h = @price_change_24h,
+    volume_24h = @volume_24h,
+    liquidity_usd = @liquidity_usd,
+    txns_24h_buys = @txns_24h_buys,
+    txns_24h_sells = @txns_24h_sells,
+    revenue_self_reported = CASE WHEN @revenue_self_reported > COALESCE(revenue_self_reported, 0) THEN @revenue_self_reported ELSE revenue_self_reported END,
+    revenue_sources = CASE WHEN @revenue_self_reported > COALESCE(revenue_self_reported, 0) THEN @revenue_sources ELSE revenue_sources END,
+    revenue_updated_at = CASE WHEN @revenue_self_reported > COALESCE(revenue_self_reported, 0) THEN @revenue_updated_at ELSE revenue_updated_at END,
+    market_enriched_at = @market_enriched_at
+    WHERE id = @id`);
   const annotateCanonical = db.prepare(`UPDATE agents SET
     metadata = @metadata,
     token_market_cap = COALESCE(@token_market_cap, token_market_cap),
@@ -216,7 +246,7 @@ function syncProfiles(db, profiles, markets) {
     market_enriched_at = @market_enriched_at
     WHERE id = @id`);
 
-  const stats = { inserted: 0, updatedBankr: 0, annotatedCanonical: 0, skippedCanonical: 0 };
+  const stats = { inserted: 0, updatedBankr: 0, correctedCanonical: 0, annotatedCanonical: 0, skippedCanonical: 0 };
   const inserted = [];
   const updated = [];
   const canonical = [];
@@ -248,6 +278,17 @@ function syncProfiles(db, profiles, markets) {
         revenue_updated_at: new Date().toISOString(),
         market_enriched_at: now,
       };
+
+      const canonicalMatch = canonicalBankrProfileMatch(profile);
+      if (canonicalMatch?.agentId) {
+        const canonicalRow = canonicalByAgent.get({ agent_id: normalizeAddress(canonicalMatch.agentId) });
+        if (canonicalRow && STRONG_PROVENANCE.has(canonicalRow.platform)) {
+          updateCanonicalToken.run({ ...base, id: canonicalRow.id });
+          stats.correctedCanonical++;
+          canonical.push(`${base.name}→${canonicalRow.platform}`);
+        }
+      }
+
       const rows = byToken.all(token);
       if (!rows.length) {
         insert.run(base);
